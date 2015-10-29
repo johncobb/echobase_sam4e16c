@@ -18,6 +18,9 @@
 #include "sysclk.h"
 #include "comm.h"
 #include "tcpip.h"
+#include "wan.h"
+#include "wan_msg.h"
+#include "wan_task.h"
 #include "app_task.h"
 
 xSemaphoreHandle app_start_signal = 0;
@@ -27,6 +30,9 @@ static volatile bool start_task = false;
 static volatile bool wait_ack = false;
 
 static void app_handler_task(void *pvParameters);
+
+static void app_handler_socket(void);
+static void app_handler_queue(void);
 
 void create_app_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_priority)
 {
@@ -87,10 +93,54 @@ static sys_result parse_result(char * buffer, char * token, char ** ptr_out)
 	return result;
 }
 
-
 static void app_handler_task(void *pvParameters)
 {
+//	app_handler_socket();
+	app_handler_queue();
 
+}
+
+static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
+
+static void app_handler_queue(void)
+{
+	tag_msg_t *msg;
+
+
+	BaseType_t result;
+
+	memset(tmp_buffer, 0, sizeof(tmp_buffer));
+
+
+
+	while(true) {
+		result = xQueueReceive(xWanMessagesQueue, tmp_buffer, QUEUE_TICKS);
+
+		uint8_t cmd = tmp_buffer[0];
+
+		if(cmd == TAG) {
+			msg = (tag_msg_t*) tmp_buffer;
+
+
+		}
+
+
+		if(result == pdTRUE) {
+
+
+
+
+
+
+			// handle the message
+		}
+		vTaskDelay(100);
+	}
+}
+
+
+void app_handler_socket(void)
+{
 	uint8_t * ip_endpoint = "bs.cphandheld.com";
 //	uint8_t * ip_endpoint = "96.27.198.215";
 //	uint8_t * ip_endpoint2 = "96.27.198.215";
@@ -111,9 +161,12 @@ static void app_handler_task(void *pvParameters)
 		vTaskDelay(100);
 	}
 
+	BaseType_t result;
+
 	while(true) {
 
 		if(start_task) {
+
 			start_task = false;
 
 			printf("start task.\r\n");

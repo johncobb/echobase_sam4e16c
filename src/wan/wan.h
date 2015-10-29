@@ -16,9 +16,15 @@
 
 #define WAN_BAUD_RATE           38400
 
+#define COBS_MSG_LEN			64
 #define COBS_BUFFER_LEN			128
 #define WAN_RX_BUFFER_SIZE		128
 #define MAX_TAG_MSG_AGE			10000
+
+extern QueueHandle_t xWanQueue;
+extern QueueHandle_t xWanEncodedQueue;
+extern QueueHandle_t xWanMessagesQueue;
+
 
 enum comands {
 	TAG = 0X01, ROUTER_STATUS = 0x08

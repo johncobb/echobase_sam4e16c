@@ -8,7 +8,7 @@
 #ifndef USART_H_
 #define USART_H_
 
-#define USART_RX_BUFFER_SIZE 512
+#define USART_RX_BUFFER_SIZE 128
 
 typedef struct
 {

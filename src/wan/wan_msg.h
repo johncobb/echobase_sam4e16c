@@ -37,8 +37,9 @@ enum {
 	CMD_CONFIG_DONE = 0x07,
 	CMD_ROUTER_STATUS = 0X08
 };
+#define RAMDISK_META_OFFSET		10
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
 	uint8_t messageType;		// 0x01 for tag
 	uint64_t routerMac;			// full MAC or source router
 	uint16_t routerShort;		// short id of MAC source router - used for two-way comm
@@ -50,11 +51,23 @@ typedef struct {
 	uint8_t tagRssi;			// signal strength of tag-to-router signal
 	uint32_t tagBattery;		// raw ADC value of battery read - currently not reliable but kept for future uses
 	uint32_t tagTemperature;	// raw ADC value of temp sensor on tag - reserved for future use
+//	uint32_t lastSent;			// RAMDISK META DATA
+//	uint16_t temp;				// RAMDISK META DATA
+//	void *next;					// RAMDISK META DATA
+
+} tag_msg_t;
+
+
+
+
+typedef struct {
+	tag_msg_t *tag;
 	uint32_t lastSent;
 	uint16_t temp;
 	void *next;
+}ramdisk_record_t;
 
-} tag_msg_t;
+
 
 
 

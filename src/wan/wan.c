@@ -18,6 +18,7 @@
 #define RX_BUFFER_LEN			128
 
 
+
 freertos_usart_if wan_usart;
 
 uint8_t wan_rx_buffer_index = 0;
