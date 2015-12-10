@@ -72,7 +72,7 @@ static void wan_proc_task(void *pvParameters)
 			// decode the message
 			decode_cobs(encoded_buffer, COBS_MSG_LEN, decoded_buffer);
 
-			log_tag_buffer(decoded_buffer);
+//			log_tag_buffer(decoded_buffer);
 
 			uint8_t cmd = decoded_buffer[0];
 

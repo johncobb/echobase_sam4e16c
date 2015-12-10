@@ -101,6 +101,19 @@ static void app_handler_task(void *pvParameters)
 }
 
 static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
+uint8_t packet_buffer[COBS_BUFFER_LEN] = {0};
+
+uint8_t message_type = 0;
+uint8_t rtr_mac[8] = {0};
+uint8_t rtr_short[4] = {0};
+uint8_t tag_mac[8] = {0};
+uint8_t tag_cfg[2] = {0};
+uint8_t tag_serial[2] = {0};
+uint8_t tag_status[2] = {0};
+uint8_t tag_lqi = 0;
+uint8_t tag_rssi = 0;
+uint8_t tag_battery[4] = {0};
+uint8_t tag_temp[4] = {0};
 
 static void app_handler_queue(void)
 {
@@ -114,21 +127,49 @@ static void app_handler_queue(void)
 
 
 	while(true) {
+
 		result = xQueueReceive(xWanMessagesQueue, tmp_buffer, QUEUE_TICKS);
-
-		uint8_t cmd = tmp_buffer[0];
-
-		if(cmd == TAG) {
-			msg = (tag_msg_t*) tmp_buffer;
-
-
-		}
-
 
 		if(result == pdTRUE) {
 
 
+			uint8_t cmd = tmp_buffer[0];
 
+			if(cmd == TAG) {
+				msg = (tag_msg_t*) tmp_buffer;
+				memset(packet_buffer, '\0', sizeof(packet_buffer));
+
+//				memcpy(rtr_mac, (uint8_t*)(msg->routerMac), 8);
+				*((uint64_t*)rtr_mac) = msg->routerMac;
+
+
+//				sprintf(packet_buffer, "routerMac: %01611x\r\n", msg->routerMac );
+
+
+
+				printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	rtr_mac[7],
+																					rtr_mac[6],
+																					rtr_mac[5],
+																					rtr_mac[4],
+																					rtr_mac[3],
+																					rtr_mac[2],
+																					rtr_mac[1],
+																					rtr_mac[0]);
+
+				uint8_t * packet = "20000000,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r";
+
+
+//				printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	decoded_buffer[8],
+//																					decoded_buffer[7],
+//																					decoded_buffer[6],
+//																					decoded_buffer[5],
+//																					decoded_buffer[4],
+//																					decoded_buffer[3],
+//																					decoded_buffer[2],
+//																					decoded_buffer[1]);
+
+
+			}
 
 
 

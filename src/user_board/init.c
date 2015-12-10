@@ -90,8 +90,10 @@ void board_init(void)
 
 void board_init_modem_usart(void)
 {
+	// todo: research why this needs to be called in FreeRTOS modem compared
+	// to a single threaded task
 #ifdef CONF_MODEM_USART
-//	pio_configure(PINS_USART1_PIO, PINS_USART1_TYPE, PINS_USART1_MASK, PINS_USART1_ATTR);
+	pio_configure(PINS_USART1_PIO, PINS_USART1_TYPE, PINS_USART1_MASK, PINS_USART1_ATTR);
 #endif
 }
 

@@ -119,6 +119,7 @@ void wan_handler_messages(void)
 			if(c == WAN_TOKEN_END) {
 
 
+//				printf("wan message found\r\n");
 //				printf("msg found buffer_index: %d\r\n", cobs_buffer_index);
 
 

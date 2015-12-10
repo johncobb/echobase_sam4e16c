@@ -34,6 +34,12 @@ typedef struct
 	callback_func_t callback;
 }at_command_cnx_t;
 
+typedef enum
+{
+	CNX_CLOSED = 0,
+	CNX_OPENED,
+	CNX_SUSPENDED
+}modem_cnx_status;
 
 typedef struct
 {

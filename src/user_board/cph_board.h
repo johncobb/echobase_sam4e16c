@@ -8,6 +8,10 @@
 #include "pio.h"
 #include "pmc.h"
 
+#warning "check ECHOBASE_REV before testing"
+
+//#define		ECHOBASE_REV_A01		1
+#define		ECHOBASE_REV_A02		1
 extern uint32_t clock_millis;
 
 uint32_t clock_time(void);
@@ -114,6 +118,7 @@ void board_init_printf_uart(void);
 /*----------------------------------------------------------------------------*/
 /*	LEDS																	  */
 /*----------------------------------------------------------------------------*/
+#ifdef ECHOBASE_REV_A01
 // MCU_LED1
 #define MCU_LED1       		PIO_PD22_IDX
 #define MCU_LED1_MASK  		(1 << 22)
@@ -121,7 +126,21 @@ void board_init_printf_uart(void);
 #define MCU_LED1_ID    		ID_PIOD
 #define MCU_LED1_TYPE  		PIO_OUTPUT_0
 #define MCU_LED1_ATTR  		PIO_DEFAULT
+#endif
 
+
+#ifdef ECHOBASE_REV_A02
+// MCU_LED1
+#define MCU_LED1       		PIO_PA0_IDX
+#define MCU_LED1_MASK  		(1 << 0)
+#define MCU_LED1_PIO   		PIOA
+#define MCU_LED1_ID    		ID_PIOA
+#define MCU_LED1_TYPE  		PIO_OUTPUT_0
+#define MCU_LED1_ATTR  		PIO_DEFAULT
+#endif
+
+
+#ifdef ECHOBASE_REV_A01
 // MCU_LED2
 #define MCU_LED2       		PIO_PD23_IDX
 #define MCU_LED2_MASK  		(1 << 23)
@@ -129,7 +148,17 @@ void board_init_printf_uart(void);
 #define MCU_LED2_ID    		ID_PIOD
 #define MCU_LED2_TYPE  		PIO_OUTPUT_0
 #define MCU_LED2_ATTR  		PIO_DEFAULT
+#endif
 
+#ifdef ECHOBASE_REV_A02
+// MCU_LED2
+#define MCU_LED2       		PIO_PA1_IDX
+#define MCU_LED2_MASK  		(1 << 1)
+#define MCU_LED2_PIO   		PIOA
+#define MCU_LED2_ID    		ID_PIOA
+#define MCU_LED2_TYPE  		PIO_OUTPUT_0
+#define MCU_LED2_ATTR  		PIO_DEFAULT
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*	WAN INTs																	  */

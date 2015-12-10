@@ -54,12 +54,7 @@ typedef enum
 	SYS_NOTFOUND
 }sys_result;
 
-typedef enum
-{
-	CNX_CLOSED = 0,
-	CNX_OPENED,
-	CNX_SUSPENDED
-}modem_cnx_status;
+
 
 
 typedef struct {

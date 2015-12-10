@@ -151,9 +151,6 @@ sys_result modem_init(void)
 	// configure usart pins (must be done after init_hw call)
 	board_init_modem_usart();
 
-	// enable the USART peripheral clock
-	sysclk_enable_peripheral_clock(MODEM_USART_ID);
-
 	// init usart
 	init_usart(MODEM_USART);
 

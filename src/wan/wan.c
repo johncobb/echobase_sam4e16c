@@ -32,8 +32,8 @@ static void init_usart(Usart *usart_base);
 
 uint8_t wan_init(void)
 {
-//	board_init_wan_usart();
-	sysclk_enable_peripheral_clock(WAN_USART_ID);
+	board_init_wan_usart();
+
 	init_usart(WAN_USART);
 
 	return 0;

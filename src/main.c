@@ -5,6 +5,8 @@
 
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
+#include "semphr.h"
 #include "timers.h"
 #include "asf.h"
 #include "conf_board.h"
@@ -178,16 +180,16 @@ int main(void) {
 
 //	printf("create_comm_task\r\n");
 //	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
-//
+
 
 	printf("create_wan_task\r\n");
 	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);
 	printf("create_proc_wan_task\r\n");
 	create_wan_proc_task(mainWANPROC_TASK_STACK_SIZE, mainWANPROC_TASK_PRIORITY);
-
-
-	printf("create_apptask_task\r\n");
-	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
+//
+//
+//	printf("create_apptask_task\r\n");
+//	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
 
 
 	printf("create_led_task\r\n");
