@@ -1,8 +1,9 @@
 /*
  * ramdisk.h
  *
- *  Created on: Dec 10, 2015
- *      Author: jcobb
+ *  Created on: Nov 19, 2014
+ *      Author: William Johns
+ *      https://github.com/WilliamJohns/Linked-List
  */
 
 #ifndef SRC_CPH_RAMDISK_H_

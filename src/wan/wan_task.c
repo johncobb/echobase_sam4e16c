@@ -87,8 +87,8 @@ static uint8_t cobs_encoded_msg[COBS_MSG_LEN] = {0};
 // once decoded enqueue to the xWanQueue
 static void wan_handler_task(void *pvParameters)
 {
-	wan_handler_messages();
-//	wan_handler_helloworld();
+//	wan_handler_messages();
+	wan_handler_helloworld();
 
 }
 
@@ -119,7 +119,7 @@ void wan_handler_messages(void)
 			if(c == WAN_TOKEN_END) {
 
 
-//				printf("wan message found\r\n");
+				printf("wan message found\r\n");
 //				printf("msg found buffer_index: %d\r\n", cobs_buffer_index);
 
 
@@ -157,63 +157,64 @@ void wan_handler_messages(void)
 	}
 }
 
-//static char * ptr = NULL;
-//uint16_t hello_world_count = 0;
+static char * ptr = NULL;
+uint16_t hello_world_count = 0;
+#define TOKEN_END '\r'
 
-//void wan_handler_helloworld(void)
-//{
-//	memset(cobs_buffer, '\0', COBS_BUFFER_LEN+1);
-//
-//	printf("wan task started...\r\n");
-//	while(true) {
-//
-//		// read the usart
-//		wan_handler_usart();
-//
-//		// check for data
-//		uint8_t byte_count = usart_data_available(&wan_ring_buffer);
-////		printf("byte_count: %d\r\n", byte_count);
-//
-//		for(int i=0; i<byte_count; i++) {
-//
-//			// read one byte
-//			uint8_t c = usart_data_read(&wan_ring_buffer);
-//			// store in buffer
-//			cobs_buffer[cobs_buffer_index++] = c;
-//
-//			// check to see if we reached a delimeter
-//			if(c == ((uint8_t) TOKEN_END)) {
-//
-//				if((ptr = strstr(cobs_buffer, "HELLOWORLD"))) {
-//					cobs_buffer_index = 0;
-//					printf("hello found!\r\n");
-//
-//					BaseType_t result;
-//					hello_world_msg_t msg = {0, {0}};
-//
-//					msg.count = hello_world_count++;
-//					memcpy(msg.msg, cobs_buffer, COBS_MSG_LEN);
-//
-//					result = xQueueSendToBack( xWanHelloWorldQueue, &msg, (TickType_t)0);
-//
-////					result = xQueueSendToBack( xWanMessagesQueue, &msg, (TickType_t)0);
-//					if(result == pdTRUE) {
-//						printf("enqueued successfully\r\n");
-//					} else {
-//						printf("failed to enqueue\r\n");
-//					}
-//				}
-//
-//				// reset the buffer
-//				memset(cobs_buffer, '\0', COBS_BUFFER_LEN+1);
-//
-//			}
-//		}
-//
-//		vTaskDelay(500);
-//
-//	}
-//}
+void wan_handler_helloworld(void)
+{
+	memset(cobs_buffer, '\0', COBS_BUFFER_LEN+1);
+
+	printf("wan task started...\r\n");
+	while(true) {
+
+		// read the usart
+		wan_handler_usart();
+
+		// check for data
+		uint8_t byte_count = usart_data_available(&wan_ring_buffer);
+//		printf("byte_count: %d\r\n", byte_count);
+
+		for(int i=0; i<byte_count; i++) {
+
+			// read one byte
+			uint8_t c = usart_data_read(&wan_ring_buffer);
+			// store in buffer
+			cobs_buffer[cobs_buffer_index++] = c;
+
+			// check to see if we reached a delimeter
+			if(c == ((uint8_t) TOKEN_END)) {
+
+				if((ptr = strstr(cobs_buffer, "HELLOWORLD"))) {
+					cobs_buffer_index = 0;
+					printf("hello found!\r\n");
+
+					BaseType_t result;
+					hello_world_msg_t msg = {0, {0}};
+
+					msg.count = hello_world_count++;
+					memcpy(msg.msg, cobs_buffer, COBS_MSG_LEN);
+
+					result = xQueueSendToBack( xWanHelloWorldQueue, &msg, (TickType_t)0);
+
+//					result = xQueueSendToBack( xWanMessagesQueue, &msg, (TickType_t)0);
+					if(result == pdTRUE) {
+						printf("enqueued successfully\r\n");
+					} else {
+						printf("failed to enqueue\r\n");
+					}
+				}
+
+				// reset the buffer
+				memset(cobs_buffer, '\0', COBS_BUFFER_LEN+1);
+
+			}
+		}
+
+		vTaskDelay(500);
+
+	}
+}
 
 static void wan_handler_usart(void)
 {

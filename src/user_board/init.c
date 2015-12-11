@@ -100,7 +100,7 @@ void board_init_modem_usart(void)
 void board_init_wan_usart(void)
 {
 #ifdef CONF_WAN_USART
-//	pio_configure(PINS_USART0_PIO, PINS_USART0_TYPE, PINS_USART0_MASK, PINS_USART0_ATTR);
+	pio_configure(PINS_USART0_PIO, PINS_USART0_TYPE, PINS_USART0_MASK, PINS_USART0_ATTR);
 #endif
 }
 

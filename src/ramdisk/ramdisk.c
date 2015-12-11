@@ -1,9 +1,11 @@
 /*
  * ramdisk.c
  *
- *  Created on: Dec 10, 2015
- *      Author: jcobb
+ *  Created on: Nov 19, 2014
+ *      Author: William Johns
+ *      https://github.com/WilliamJohns/Linked-List
  */
+
 #include "ramdisk.h"
 
 static struct record_t list[RAMDISK_SIZE];
@@ -107,12 +109,12 @@ void print_records()
 {
     current = valid_head;
     while (current != NULL )
-        {
-            printf( "%" PRIu64 "\n", current->wan_msg.tagMac);
-            printf( "%d\n", current->wan_msg.tagRssi);
-            printf( "%d\n", current->wan_msg.tagBattery);
-            current = current->next;
-        }
+	{
+		printf( "%" PRIu64 "\n", current->wan_msg.tagMac);
+		printf( "%d\n", current->wan_msg.tagRssi);
+		printf( "%d\n", current->wan_msg.tagBattery);
+		current = current->next;
+	}
 }
 
 struct record_t *ramdisk_find(uint64_t target)

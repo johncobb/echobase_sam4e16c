@@ -8,14 +8,12 @@
 #include "queue.h"
 #include "semphr.h"
 #include "timers.h"
-#include "asf.h"
-#include "conf_board.h"
+#include <cph.h>
+
 #include "cli_tasks.h"
 #include "comm.h"
 #include "sysclk.h"
 #include "app_task.h"
-
-
 
 
 
@@ -83,8 +81,6 @@ delete-task:
 
 void create_led_task(void);
 
-uint32_t clock_millis = 0;
-
 extern void vApplicationMallocFailedHook(void) {
 	taskDISABLE_INTERRUPTS();
 	for (;;)
@@ -101,13 +97,9 @@ extern void vApplicationIdleHook(void) {
 }
 
 extern void vApplicationTickHook(void) {
-	clock_millis++;
+	g_cph_millis++;
 }
 
-uint32_t clock_time(void)
-{
-	return clock_millis;
-}
 
 bool pin_powmon = false;
 
@@ -165,15 +157,16 @@ static void configure_console(void) {
 
 int main(void) {
 
-
-
-
-
-	sysclk_init();
+	cph_clock_init();
 	board_init();
 
 	configure_console();
-	printf("CPH EchoBase v%d\r\n", 1);
+	printf("CPH EchoBase SAM4E16C %s\r\n", SOFTWARE_VER_STRING);
+
+	// unit tests
+//	test_ramdisk();
+
+
 
 //	printf("create_uart_cli_task\r\n");
 //	create_uart_cli_task(CONSOLE_UART, mainUART_CLI_TASK_STACK_SIZE, mainUART_CLI_TASK_PRIORITY);
@@ -186,8 +179,7 @@ int main(void) {
 	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);
 	printf("create_proc_wan_task\r\n");
 	create_wan_proc_task(mainWANPROC_TASK_STACK_SIZE, mainWANPROC_TASK_PRIORITY);
-//
-//
+
 //	printf("create_apptask_task\r\n");
 //	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
 
