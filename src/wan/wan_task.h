@@ -10,6 +10,7 @@
 
 #include "ring_buffer.h"
 
+
 #define WAN_TOKEN_END		0
 #define WAN_QUEUE_TICKS		16
 

@@ -32,7 +32,7 @@ static void init_usart(Usart *usart_base);
 
 uint8_t wan_init(void)
 {
-	board_init_wan_usart();
+//	board_init_wan_usart();
 
 	init_usart(WAN_USART);
 

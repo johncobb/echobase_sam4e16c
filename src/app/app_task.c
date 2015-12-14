@@ -95,36 +95,33 @@ static sys_result parse_result(char * buffer, char * token, char ** ptr_out)
 
 static void app_handler_task(void *pvParameters)
 {
-//	app_handler_socket();
+
 	app_handler_queue();
+//	app_handler_socket();
 
 }
 
 static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
 uint8_t packet_buffer[COBS_BUFFER_LEN] = {0};
 
-uint8_t message_type = 0;
-uint8_t rtr_mac[8] = {0};
-uint8_t rtr_short[4] = {0};
-uint8_t tag_mac[8] = {0};
-uint8_t tag_cfg[2] = {0};
-uint8_t tag_serial[2] = {0};
-uint8_t tag_status[2] = {0};
-uint8_t tag_lqi = 0;
-uint8_t tag_rssi = 0;
-uint8_t tag_battery[4] = {0};
-uint8_t tag_temp[4] = {0};
+static uint8_t message_type = 0;
+static uint8_t rtr_mac[8] = {0};
+static uint8_t rtr_short[4] = {0};
+static uint8_t tag_mac[8] = {0};
+static uint8_t tag_cfg[2] = {0};
+static uint8_t tag_serial[2] = {0};
+static uint8_t tag_status[2] = {0};
+static uint8_t tag_lqi = 0;
+static uint8_t tag_rssi = 0;
+static uint8_t tag_battery[4] = {0};
+static uint8_t tag_temp[4] = {0};
 
 static void app_handler_queue(void)
 {
 	tag_msg_t *msg;
-
-
 	BaseType_t result;
 
 	memset(tmp_buffer, 0, sizeof(tmp_buffer));
-
-
 
 	while(true) {
 
@@ -132,16 +129,23 @@ static void app_handler_queue(void)
 
 		if(result == pdTRUE) {
 
-
 			uint8_t cmd = tmp_buffer[0];
 
 			if(cmd == TAG) {
 				msg = (tag_msg_t*) tmp_buffer;
 				memset(packet_buffer, '\0', sizeof(packet_buffer));
 
-//				memcpy(rtr_mac, (uint8_t*)(msg->routerMac), 8);
+				message_type = msg->messageType;
 				*((uint64_t*)rtr_mac) = msg->routerMac;
-
+				*((uint16_t*)rtr_short) = msg->routerShort;
+				*((uint64_t*)tag_mac) = msg->tagMac;
+				*((uint16_t*)tag_cfg) = msg->tagConfigSet;
+				*((uint16_t*)tag_serial) = msg->tagSerial;
+				*((uint16_t*)tag_status) = msg->tagStatus;
+				tag_lqi = msg->tagLqi;
+				tag_rssi = msg->tagRssi;
+				*((uint32_t*)tag_battery) = msg->tagBattery;
+				*((uint32_t*)tag_temp) = msg->tagTemperature;
 
 //				sprintf(packet_buffer, "routerMac: %01611x\r\n", msg->routerMac );
 
@@ -156,17 +160,16 @@ static void app_handler_queue(void)
 																					rtr_mac[1],
 																					rtr_mac[0]);
 
+				printf("tagMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",		tag_mac[7],
+																					tag_mac[6],
+																					tag_mac[5],
+																					tag_mac[4],
+																					tag_mac[3],
+																					tag_mac[2],
+																					tag_mac[1],
+																					tag_mac[0]);
+
 				uint8_t * packet = "20000000,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r";
-
-
-//				printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	decoded_buffer[8],
-//																					decoded_buffer[7],
-//																					decoded_buffer[6],
-//																					decoded_buffer[5],
-//																					decoded_buffer[4],
-//																					decoded_buffer[3],
-//																					decoded_buffer[2],
-//																					decoded_buffer[1]);
 
 
 			}

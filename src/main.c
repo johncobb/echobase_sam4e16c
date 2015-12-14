@@ -180,8 +180,8 @@ int main(void) {
 	printf("create_proc_wan_task\r\n");
 	create_wan_proc_task(mainWANPROC_TASK_STACK_SIZE, mainWANPROC_TASK_PRIORITY);
 
-//	printf("create_apptask_task\r\n");
-//	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
+	printf("create_apptask_task\r\n");
+	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
 
 
 	printf("create_led_task\r\n");

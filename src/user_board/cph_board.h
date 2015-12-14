@@ -48,21 +48,6 @@ void board_init_printf_uart(void);
 /* ------------------------------------------------------------------------ */
 /* UART0                                                                    */
 /* ------------------------------------------------------------------------ */
-//#define TRACE_UART			USART0
-//#define TRACE_UART_ID		ID_USART0
-
-//#define PRINTF_USART		USART1
-//#define PRINTF_USART_ID		ID_USART1
-
-//#define PRINTF_UART		UART0
-//#define PRINTF_UART_ID		ID_UART0
-//
-//#define PINS_UART0_PIO  PIOA
-//#define PINS_UART0_ID   ID_PIOA
-//#define PINS_UART0_TYPE PIO_PERIPH_A
-//#define PINS_UART0_MASK (PIO_PA9A_URXD0 | PIO_PA10A_UTXD0)
-//#define PINS_UART0_ATTR PIO_DEFAULT
-
 #define PRINTF_UART		UART0
 #define PRINTF_UART_ID		ID_UART0
 

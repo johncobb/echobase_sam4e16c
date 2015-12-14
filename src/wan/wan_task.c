@@ -26,6 +26,8 @@
 #include "cobs.h"
 #include "ramdisk.h"
 
+//#define RUN_HELLOWWORLD_TEST	1
+
 xSemaphoreHandle wan_start_signal = 0;
 
 QueueHandle_t xWanQueue;
@@ -39,7 +41,10 @@ static void wan_handler_task(void *pvParameters);
 static void wan_handler_usart(void);
 
 void wan_handler_messages(void);
+
+#ifdef RUN_HELLOWWORLD_TEST
 void wan_handler_helloworld(void);
+#endif
 
 
 static volatile uint32_t byte_count = 0;
@@ -56,7 +61,10 @@ void create_wan_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_pri
 	xWanQueue = xQueueCreate(10, COBS_MSG_LEN);
 	xWanEncodedQueue = xQueueCreate(10, COBS_MSG_LEN);
 	xWanMessagesQueue = xQueueCreate(10, COBS_MSG_LEN);
+
+#ifdef RUN_HELLOWWORLD_TEST
 //	xWanHelloWorldQueue = xQueueCreate(10, COBS_MSG_LEN);
+#endif
 
 	xTaskCreate(	wan_handler_task,			/* The task that implements the command console. */
 					(const int8_t *const) "WAN",	/* Text name assigned to the task.  This is just to assist debugging.  The kernel does not use this name itself. */
@@ -87,9 +95,32 @@ static uint8_t cobs_encoded_msg[COBS_MSG_LEN] = {0};
 // once decoded enqueue to the xWanQueue
 static void wan_handler_task(void *pvParameters)
 {
-//	wan_handler_messages();
+#ifdef RUN_HELLOWWORLD_TEST
 	wan_handler_helloworld();
+#else
+	wan_handler_messages();
 
+#endif
+
+}
+
+static void wan_handler_usart(void)
+{
+	// reset the wan_rx_buffer before starting
+	memset(wan_rx_buffer, '\0', WAN_RX_BUFFER_SIZE+1);
+
+	// read the usart
+	byte_count = wan_handler_async(10);
+
+	// do we have data?
+	if(byte_count > 0) {
+		for (int i=0; i<byte_count; i++) {
+
+			uint8_t c = wan_rx_buffer[i];
+
+			usart_put_char(&wan_ring_buffer, c);
+		}
+	}
 }
 
 void wan_handler_messages(void)
@@ -118,8 +149,7 @@ void wan_handler_messages(void)
 			// check to see if we reached a delimeter
 			if(c == WAN_TOKEN_END) {
 
-
-				printf("wan message found\r\n");
+//				printf("wan message found\r\n");
 //				printf("msg found buffer_index: %d\r\n", cobs_buffer_index);
 
 
@@ -157,6 +187,13 @@ void wan_handler_messages(void)
 	}
 }
 
+
+
+
+
+
+#ifdef RUN_HELLOWWORLD_TEST
+
 static char * ptr = NULL;
 uint16_t hello_world_count = 0;
 #define TOKEN_END '\r'
@@ -173,7 +210,6 @@ void wan_handler_helloworld(void)
 
 		// check for data
 		uint8_t byte_count = usart_data_available(&wan_ring_buffer);
-//		printf("byte_count: %d\r\n", byte_count);
 
 		for(int i=0; i<byte_count; i++) {
 
@@ -194,15 +230,15 @@ void wan_handler_helloworld(void)
 
 					msg.count = hello_world_count++;
 					memcpy(msg.msg, cobs_buffer, COBS_MSG_LEN);
-
-					result = xQueueSendToBack( xWanHelloWorldQueue, &msg, (TickType_t)0);
-
-//					result = xQueueSendToBack( xWanMessagesQueue, &msg, (TickType_t)0);
-					if(result == pdTRUE) {
-						printf("enqueued successfully\r\n");
-					} else {
-						printf("failed to enqueue\r\n");
-					}
+#ifdef RUN_HELLOWWORLD_TEST
+//					result = xQueueSendToBack( xWanHelloWorldQueue, &msg, (TickType_t)0);
+//
+//					if(result == pdTRUE) {
+//						printf("enqueued successfully\r\n");
+//					} else {
+//						printf("failed to enqueue\r\n");
+//					}
+#endif
 				}
 
 				// reset the buffer
@@ -215,31 +251,7 @@ void wan_handler_helloworld(void)
 
 	}
 }
-
-static void wan_handler_usart(void)
-{
-
-	// reset the wan_rx_buffer before starting
-	memset(wan_rx_buffer, '\0', WAN_RX_BUFFER_SIZE+1);
-
-	// read the usart
-	byte_count = wan_handler_async(10);
-
-	// do we have data?
-	if(byte_count > 0) {
-		for (int i=0; i<byte_count; i++) {
-
-			uint8_t c = wan_rx_buffer[i];
-
-			usart_put_char(&wan_ring_buffer, c);
-
-			// sanity check ;)
-//			if(isascii(c))
-//				usart_put_char(&wan_ring_buffer, c);
-		}
-	}
-
-}
+#endif
 
 
 

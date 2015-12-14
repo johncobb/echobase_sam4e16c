@@ -72,7 +72,7 @@ void board_init(void)
 	pio_configure(WAN_INT2_PIO, WAN_INT2_TYPE, WAN_INT2_MASK, WAN_INT2_ATTR);
 	pio_configure(WAN_INT3_PIO, WAN_INT3_TYPE, WAN_INT3_MASK, WAN_INT3_ATTR);
 	// enable the wan peripheral clock
-	pmc_enable_periph_clk(ID_PIOB);
+//	pmc_enable_periph_clk(ID_PIOB);
 #endif
 
 

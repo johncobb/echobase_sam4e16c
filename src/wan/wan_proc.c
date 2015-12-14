@@ -84,13 +84,16 @@ static void wan_proc_task(void *pvParameters)
 					result = xQueueSendToBack( xWanMessagesQueue, &tag_msg, (TickType_t)0);
 
 					if(result == pdTRUE) {
-						printf("enqueued successfully\r\n");
+//						printf("enqueued successfully\r\n");
 					} else {
 						printf("failed to enqueue!\r\n");
 					}
 
-					// write to ramdisk
-//					ramdisk_write(tag_msg);
+//					struct record_t record;
+//					record.wan_msg = tag_msg;
+//
+//					// write to ramdisk
+//					ramdisk_write(record);
 					break;
 				case ROUTER_STATUS:
 //					parse_router_status(decoded_buffer, &router_msg);
