@@ -22,6 +22,7 @@
 #include "wan_msg.h"
 #include "wan_task.h"
 #include "app_task.h"
+#include <cph.h>
 
 xSemaphoreHandle app_start_signal = 0;
 
@@ -33,6 +34,29 @@ static void app_handler_task(void *pvParameters);
 
 static void app_handler_socket(void);
 static void app_handler_queue(void);
+
+static void log_tag_msg(tag_msg_t *msg);
+
+static void app_data_handler(uint8_t *data, uint32_t len);
+static sys_result parse_result(char * buffer, char * token, char ** ptr_out);
+
+
+//[0] - BaseStationId,           uint32_t
+//[1] - MessageType,             uint8_t
+//[2] - RouterMacAddress,        uint64_t
+//[3] - RouterMacShortAddress,   uint16_t
+//[4] - TagMacAddress,           uint64_t
+//[5] - TagMacShortAddress,      uint32_t
+//[6] - ConfigSet,               uint8_t
+//[7] - Serial,                  uint8_t
+//[8] - Status,                  uint16_t
+//[9] - LQI ,                    uint8_t
+//[10] - Rssi,                   uint8_t
+//[11] - Battery,                uint16_t
+//[12] - Temperature,            uint16_t
+
+static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
+
 
 void create_app_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_priority)
 {
@@ -48,9 +72,6 @@ void create_app_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_pri
 
 }
 
-static void app_data_handler(uint8_t *data, uint32_t len);
-static sys_result parse_result(char * buffer, char * token, char ** ptr_out);
-
 void app_start(void)
 {
 	printf("app_start\r\n");
@@ -58,7 +79,6 @@ void app_start(void)
 		start_task = true;
 	}
 }
-
 
 void app_data_handler(uint8_t *data, uint32_t len)
 {
@@ -101,20 +121,6 @@ static void app_handler_task(void *pvParameters)
 
 }
 
-static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
-uint8_t packet_buffer[COBS_BUFFER_LEN] = {0};
-
-static uint8_t message_type = 0;
-static uint8_t rtr_mac[8] = {0};
-static uint8_t rtr_short[4] = {0};
-static uint8_t tag_mac[8] = {0};
-static uint8_t tag_cfg[2] = {0};
-static uint8_t tag_serial[2] = {0};
-static uint8_t tag_status[2] = {0};
-static uint8_t tag_lqi = 0;
-static uint8_t tag_rssi = 0;
-static uint8_t tag_battery[4] = {0};
-static uint8_t tag_temp[4] = {0};
 
 static void app_handler_queue(void)
 {
@@ -132,49 +138,22 @@ static void app_handler_queue(void)
 			uint8_t cmd = tmp_buffer[0];
 
 			if(cmd == TAG) {
+
 				msg = (tag_msg_t*) tmp_buffer;
-				memset(packet_buffer, '\0', sizeof(packet_buffer));
 
-				message_type = msg->messageType;
-				*((uint64_t*)rtr_mac) = msg->routerMac;
-				*((uint16_t*)rtr_short) = msg->routerShort;
-				*((uint64_t*)tag_mac) = msg->tagMac;
-				*((uint16_t*)tag_cfg) = msg->tagConfigSet;
-				*((uint16_t*)tag_serial) = msg->tagSerial;
-				*((uint16_t*)tag_status) = msg->tagStatus;
-				tag_lqi = msg->tagLqi;
-				tag_rssi = msg->tagRssi;
-				*((uint32_t*)tag_battery) = msg->tagBattery;
-				*((uint32_t*)tag_temp) = msg->tagTemperature;
+#ifdef LOG_TAGMSG
+				log_tag_msg(msg);
+#endif
 
-//				sprintf(packet_buffer, "routerMac: %01611x\r\n", msg->routerMac );
+#ifdef WAN_TAGMSG_FORMAT_ASCII
+				wan_tagmsg_toascii(msg, packet_buffer_ascii);
+#endif
 
 
-
-				printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	rtr_mac[7],
-																					rtr_mac[6],
-																					rtr_mac[5],
-																					rtr_mac[4],
-																					rtr_mac[3],
-																					rtr_mac[2],
-																					rtr_mac[1],
-																					rtr_mac[0]);
-
-				printf("tagMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",		tag_mac[7],
-																					tag_mac[6],
-																					tag_mac[5],
-																					tag_mac[4],
-																					tag_mac[3],
-																					tag_mac[2],
-																					tag_mac[1],
-																					tag_mac[0]);
-
-				uint8_t * packet = "20000000,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r";
-
+			} else if (cmd == ROUTER_STATUS) {
+				printf("router status message\r\n");
 
 			}
-
-
 
 			// handle the message
 		}
@@ -247,3 +226,75 @@ void app_handler_socket(void)
 		vTaskDelay(500);
 	}
 }
+
+
+
+static void log_tag_msg(tag_msg_t *msg)
+{
+
+	// first copy msg into ascii buffer
+	wan_tagmsg_toascii(msg, packet_buffer_ascii);
+
+	printf("***** tag msg ascii ****\r\n");
+	printf("%s\r\n", packet_buffer_ascii);
+
+//
+//				printf("msgType: %02x\r\n", msg_type);
+//				printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	rtr_mac[7],
+//																					rtr_mac[6],
+//																					rtr_mac[5],
+//																					rtr_mac[4],
+//																					rtr_mac[3],
+//																					rtr_mac[2],
+//																					rtr_mac[1],
+//																					rtr_mac[0]);
+//
+//				printf("routerShort: %02x:%02x\r\n",	rtr_short[1],
+//														rtr_short[0]);
+//
+//				printf("tagMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	tag_mac[7],
+//																				tag_mac[6],
+//																				tag_mac[5],
+//																				tag_mac[4],
+//																				tag_mac[3],
+//																				tag_mac[2],
+//																				tag_mac[1],
+//																				tag_mac[0]);
+//
+//				printf("tagShort: %02x:%02x\r\n",		tag_short[1],
+//														tag_short[0]);
+//
+//				printf("tagConfig: %02x:%02x\r\n",		tag_cfg[1],
+//														tag_cfg[0]);
+//
+//				printf("tagSerial: %02x:%02x\r\n",		tag_serial[1],
+//														tag_serial[0]);
+//
+//				printf("tagStatus: %02x:%02x\r\n",		tag_status[1],
+//														tag_status[0]);
+//
+//				printf("tagLqi: %02x\r\n", tag_lqi);
+//				printf("tagRssi: %02x\r\n", tag_rssi);
+//
+//				printf("tagBattery: %02x:%02x\r\n",		tag_battery[3],
+//														tag_battery[2],
+//														tag_battery[1],
+//														tag_battery[0]);
+//
+//				printf("tagTemperature: %02x:%02x\r\n",	tag_temp[3],
+//														tag_temp[2],
+//														tag_temp[1],
+//														tag_temp[0]);
+
+}
+
+
+
+
+
+
+
+
+
+
+

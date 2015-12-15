@@ -26,6 +26,7 @@
 #include "cobs.h"
 #include "ramdisk.h"
 #include "wan_proc.h"
+#include <cph.h>
 
 static uint8_t encoded_buffer[COBS_MSG_LEN] = {0};
 static uint8_t decoded_buffer[COBS_BUFFER_LEN] = {0};
@@ -72,13 +73,15 @@ static void wan_proc_task(void *pvParameters)
 			// decode the message
 			decode_cobs(encoded_buffer, COBS_MSG_LEN, decoded_buffer);
 
-//			log_tag_buffer(decoded_buffer);
-
 			uint8_t cmd = decoded_buffer[0];
 
 			switch (cmd) {
 				case TAG:
-					printf("tag size: %d\r\n", sizeof(tag_msg_t));
+//					printf("tag size: %d\r\n", sizeof(tag_msg_t));
+
+#ifdef LOG_MSG_COBSDECODED
+					log_tag_buffer(decoded_buffer);
+#endif
 
 					parse_tag(decoded_buffer, &tag_msg);
 					result = xQueueSendToBack( xWanMessagesQueue, &tag_msg, (TickType_t)0);
@@ -112,8 +115,6 @@ static void wan_proc_task(void *pvParameters)
 
 static void parse_tag(uint8_t *data, tag_msg_t *tag)
 {
-
-
 	memcpy(tag->messageType, data, 1);
 
 	memcpy(tag, data, sizeof(tag_msg_t));
@@ -127,6 +128,7 @@ static void parse_router_status(uint8_t *data, router_status_msg_t *msg)
 
 static void log_tag_buffer(uint8_t * decoded_buffer)
 {
+	printf("***** decoded ****\r\n");
 	printf("messageType: %02x\r\n", decoded_buffer[0]);
 
 	printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	decoded_buffer[8],

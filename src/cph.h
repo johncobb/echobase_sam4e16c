@@ -16,8 +16,16 @@
 #include <cph_clock.h>
 #include <unit_test.h>
 
-
+#define BASESTATION_ID			"20000000"
 #define SOFTWARE_VER_STRING  	"Version 2.01    "
+
+
+#define WAN_TAGMSG_FORMAT_ASCII		1
+#define WAN_RTRMSG_FORMAT_ASCII		1
+
+#define LOG_TAGMSG					1
+//#define LOG_MSG_COBSENCODED			1
+//#define LOG_MSG_COBSDECODED			1
 
 
 #endif /* SRC_CPH_CPH_H_ */

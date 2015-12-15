@@ -17,6 +17,20 @@
 #define RX_BUFFER_SIZE_BYTES	128
 #define RX_BUFFER_LEN			128
 
+uint8_t packet_buffer_ascii[COBS_BUFFER_LEN] = {0};
+static uint8_t msg_type = 0;
+static uint8_t rtr_mac[8] = {0};
+static uint8_t rtr_short[2] = {0};
+static uint8_t tag_mac[8] = {0};
+static uint8_t tag_short[2] = {0};
+static uint8_t tag_cfg[2] = {0};
+static uint8_t tag_serial[2] = {0};
+static uint8_t tag_status[2] = {0};
+static uint8_t tag_lqi = 0;
+static uint8_t tag_rssi = 0;
+static uint8_t tag_battery[4] = {0};
+static uint8_t tag_temp[4] = {0};
+
 
 
 freertos_usart_if wan_usart;
@@ -97,5 +111,72 @@ uint32_t wan_handler_async(uint32_t millis)
 
 	//printf("modem_handler_async: %lu\r\n", len);
 	return len;
+}
+
+
+
+void wan_tagmsg_toascii(tag_msg_t *msg, uint8_t * buffer)
+{
+	memset(buffer, '\0', TAGMSG_ASCII_SIZE);
+
+
+	msg_type  = msg->messageType;
+	*((uint64_t*)rtr_mac) = msg->routerMac;
+	*((uint16_t*)rtr_short) = msg->routerShort;
+	*((uint64_t*)tag_mac) = msg->tagMac;
+	// since we don't receive the macShort we need to build it
+	tag_short[0] = tag_mac[0];
+	tag_short[1] = tag_mac[1];
+	tag_short[2] = tag_mac[2];
+	tag_short[3] = tag_mac[3];
+	*((uint16_t*)tag_cfg) = msg->tagConfigSet;
+	*((uint16_t*)tag_serial) = msg->tagSerial;
+	*((uint16_t*)tag_status) = msg->tagStatus;
+	tag_lqi = msg->tagLqi;
+	tag_rssi = msg->tagRssi;
+	*((uint32_t*)tag_battery) = msg->tagBattery;
+	*((uint32_t*)tag_temp) = msg->tagTemperature;
+
+
+	sprintf(buffer, TCP_APPMSG_BUFFER, 	msg_type,
+										rtr_mac[7],
+										rtr_mac[6],
+										rtr_mac[5],
+										rtr_mac[4],
+										rtr_mac[3],
+										rtr_mac[2],
+										rtr_mac[1],
+										rtr_mac[0],
+										rtr_short[1],
+										rtr_short[0],
+										tag_mac[7],
+										tag_mac[6],
+										tag_mac[5],
+										tag_mac[4],
+										tag_mac[3],
+										tag_mac[2],
+										tag_mac[1],
+										tag_mac[0],
+										tag_short[1],
+										tag_short[0],
+										tag_cfg[1],
+										tag_cfg[0],
+										tag_serial[1],
+										tag_serial[0],
+										tag_status[1],
+										tag_status[0],
+										tag_lqi,
+										tag_rssi,
+										tag_battery[3],
+										tag_battery[2],
+										tag_battery[1],
+										tag_battery[0],
+										tag_temp[3],
+										tag_temp[2],
+										tag_temp[1],
+										tag_temp[0]);
+
+
+
 }
 
