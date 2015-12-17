@@ -65,7 +65,7 @@ delete-task:
 #define mainUART_CLI_TASK_STACK_SIZE    		(1024)
 #define mainLED_TASK_STACK_SIZE					(configMINIMAL_STACK_SIZE * 2)
 #define mainWAN_TASK_STACK_SIZE					(1024)
-#define mainWANPROC_TASK_STACK_SIZE					(1024)
+#define mainWANPROC_TASK_STACK_SIZE				(1024)
 #define mainCOMM_TASK_STACK_SIZE				(2048)
 #define mainAPPTASK_TASK_STACK_SIZE				(2048)
 
@@ -174,19 +174,17 @@ int main(void) {
 //	printf("create_comm_task\r\n");
 //	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
 
-
 	printf("create_wan_task\r\n");
 	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);
+
 	printf("create_proc_wan_task\r\n");
 	create_wan_proc_task(mainWANPROC_TASK_STACK_SIZE, mainWANPROC_TASK_PRIORITY);
 
 	printf("create_apptask_task\r\n");
 	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
 
-
 	printf("create_led_task\r\n");
 	create_led_task();
-
 
 	printf("starting task scheduler\r\n");
 	/* Start the scheduler. */

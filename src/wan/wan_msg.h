@@ -45,19 +45,46 @@ typedef struct __attribute__((__packed__)) {
 	uint16_t routerShort;		// short id of MAC source router - used for two-way comm
 	uint64_t tagMac;			// full MAC of ble tag
 	uint16_t tagConfigSet;		// current configuration set id of tag
-	uint16_t tagSerial;			// sequential serial number of tagÕs report - used to group pings
+	uint16_t tagSerial;			// sequential serial number of tagï¿½s report - used to group pings
 	uint16_t tagStatus;			// tag status value (bit mask) within adv data
 	uint8_t tagLqi;				// link quality indicator of tag-to-router signal
 	uint8_t tagRssi;			// signal strength of tag-to-router signal
-	uint32_t tagBattery;		// raw ADC value of battery read - currently not reliable but kept for future uses
-	uint32_t tagTemperature;	// raw ADC value of temp sensor on tag - reserved for future use
-//	uint32_t lastSent;			// RAMDISK META DATA
-//	uint16_t temp;				// RAMDISK META DATA
-//	void *next;					// RAMDISK META DATA
+	uint16_t tagBattery;		// raw ADC value of battery read - currently not reliable but kept for future uses
+	uint16_t tagTemperature;	// raw ADC value of temp sensor on tag - reserved for future use
 
 } tag_msg_t;
 
 
+typedef struct __attribute__((__packed__)) {
+	uint8_t messageType;		// 0x08 for router
+	uint64_t routerMac;			// full MAC or source router
+	uint16_t routerShort;		// short id of MAC source router - used for two-way comm
+	uint8_t routerReset;		// recent reset reason
+	uint8_t resetTask;			// task that caused the reset
+	uint16_t routerSerial;		// sequential serial number of router msg
+	uint8_t routerConfigSet;	// current configuration set id of router
+	uint32_t routerMsgCount;	// current tag messages received count since reset
+	uint32_t routerUptime;		// current ms since reset
+	uint32_t routerBattery;		// raw ADC value of battery read - currently not reliable but kept for future uses
+	uint32_t routerTemperature;	// raw ADC value of temp sensor on tag - reserved for future use
+
+} router_msg_t;
+
+
+
+//typedef struct __attribute__((__packed__)) {
+//	uint8_t messageType;		// 0x08 for router
+//	uint64_t routerMac;			// full MAC or source router
+//	uint16_t routerShort;		// short id of MAC source router - used for two-way comm
+//	uint8_t routerReset;		// recent reset reason
+//	uint8_t resetTask;			// task that caused the reset
+//	uint16_t routerSerial;		// sequential serial number of router msg
+//	uint8_t routerConfigSet;	// current configuration set id of router
+//	uint32_t routerMsgCount;	// current tag messages received count since reset
+//	uint32_t routerUptime;		// current ms since reset
+//	uint32_t routerBattery;		// raw ADC value of battery read - currently not reliable but kept for future uses
+//	uint32_t routerTemperature;	// raw ADC value of temp sensor on tag - reserved for future use
+//} router_msg_t;
 
 
 typedef struct {

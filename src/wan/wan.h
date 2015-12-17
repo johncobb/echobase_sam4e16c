@@ -15,18 +15,26 @@
 #include "wan_msg.h"
 
 
+
 #define WAN_BAUD_RATE           38400
 
 #define COBS_MSG_LEN			64
 #define COBS_BUFFER_LEN			128
 #define WAN_RX_BUFFER_SIZE		128
 #define TAGMSG_ASCII_SIZE		128
+#define RTRMSG_ASCII_SIZE		128
 #define MAX_TAG_MSG_AGE			10000
 
 
-#define TCP_APPMSG_BUFFER "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x"
+//#define TCP_APPMSG_BUFFER "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x"
+//#define TCP_APPMSG_BUFFER "20000000,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x"
+
+// TEMPLATE "20000000,01,00000007802F6399,E16B,00000007802DE16B,1973,16,0001,0000,00C3,0000,0001,0000\r";
+#define TCP_APPMSG_BUFFER		"20000000,%02x,%02x%02x%02x%02x%02x%02x%02x%02x,%02x%02x,%02x%02x%02x%02x%02x%02x%02x%02x,%02x%02x,%02x%02x,%02x%02x,%02x%02x,%02x,%02x,%02x%02x,%02x%02x"
 
 
+
+#define TCP_RTRMSG_BUFFER "%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x"
 uint8_t packet_buffer_ascii[TAGMSG_ASCII_SIZE];
 
 
@@ -50,6 +58,7 @@ void WAN_SEND(uint8_t *cmd);
 uint32_t wan_handler_async(uint32_t millis);
 
 void wan_tagmsg_toascii(tag_msg_t *msg, uint8_t * buffer);
+void wan_routermsg_toascii(router_msg_t *msg, uint8_t * buffer);
 
 
 extern uint8_t wan_rx_buffer[WAN_RX_BUFFER_SIZE+1];

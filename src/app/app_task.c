@@ -19,11 +19,11 @@
 #include "comm.h"
 #include "tcpip.h"
 #include "wan.h"
-#include "wan_msg.h"
 #include "wan_task.h"
 #include "app_task.h"
 #include <cph.h>
 
+QueueHandle_t xAppMessageQueue;
 xSemaphoreHandle app_start_signal = 0;
 
 
@@ -32,10 +32,13 @@ static volatile bool wait_ack = false;
 
 static void app_handler_task(void *pvParameters);
 
-static void app_handler_socket(void);
+static void app_handler(void);
 static void app_handler_queue(void);
+static void app_handler_queue2(uint8_t *msg);
+
 
 static void log_tag_msg(tag_msg_t *msg);
+static void log_router_msg(router_msg_t *msg);
 
 static void app_data_handler(uint8_t *data, uint32_t len);
 static sys_result parse_result(char * buffer, char * token, char ** ptr_out);
@@ -56,10 +59,13 @@ static sys_result parse_result(char * buffer, char * token, char ** ptr_out);
 //[12] - Temperature,            uint16_t
 
 static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
+static uint8_t tmp_ascii_buffer[TAGMSG_ASCII_SIZE] = {0};
 
 
 void create_app_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_priority)
 {
+
+	xAppMessageQueue = xQueueCreate(10, TAGMSG_ASCII_SIZE);
 
 //	vSemaphoreCreateBinary(app_start_signal);
 
@@ -115,66 +121,20 @@ static sys_result parse_result(char * buffer, char * token, char ** ptr_out)
 
 static void app_handler_task(void *pvParameters)
 {
-
-	app_handler_queue();
-//	app_handler_socket();
-
+	app_handler();
 }
 
 
-static void app_handler_queue(void)
+
+
+
+void app_handler(void)
 {
-	tag_msg_t *msg;
 	BaseType_t result;
 
-	memset(tmp_buffer, 0, sizeof(tmp_buffer));
-
-	while(true) {
-
-		result = xQueueReceive(xWanMessagesQueue, tmp_buffer, QUEUE_TICKS);
-
-		if(result == pdTRUE) {
-
-			uint8_t cmd = tmp_buffer[0];
-
-			if(cmd == TAG) {
-
-				msg = (tag_msg_t*) tmp_buffer;
-
-#ifdef LOG_TAGMSG
-				log_tag_msg(msg);
-#endif
-
-#ifdef WAN_TAGMSG_FORMAT_ASCII
-				wan_tagmsg_toascii(msg, packet_buffer_ascii);
-#endif
-
-
-			} else if (cmd == ROUTER_STATUS) {
-				printf("router status message\r\n");
-
-			}
-
-			// handle the message
-		}
-		vTaskDelay(100);
-	}
-}
-
-
-void app_handler_socket(void)
-{
-	uint8_t * ip_endpoint = "bs.cphandheld.com";
-//	uint8_t * ip_endpoint = "96.27.198.215";
-//	uint8_t * ip_endpoint2 = "96.27.198.215";
-
-//	uint8_t * packet = "20000000,01,01,00000007802F6399,E16B,00000007802DE16B,1973,16,0001,0000,00C3,0000,0001,EE000000,470000EE\r";
-	uint8_t * packet = "20000000,01,00000007802F6399,E16B,00000007802DE16B,1973,16,0001,0000,00C3,0000,0001,0000\r";
+	uint8_t * ip_endpoint = IP_ENDPIONT;
 
 	socket_connection_t sck_connection;
-//	socket_connection_t sck_connection2;
-
-//	xSemaphoreGive(app_start_signal);
 
 	while(true) {
 		if(comm_network_state.context == 1) {
@@ -183,8 +143,6 @@ void app_handler_socket(void)
 		}
 		vTaskDelay(100);
 	}
-
-	BaseType_t result;
 
 	while(true) {
 
@@ -196,24 +154,71 @@ void app_handler_socket(void)
 
 			// create a new socket connection
 			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
-//			socket_newconnection(&sck_connection2, ip_endpoint2, DEFAULT_TCIP_CONNECTTIMEOUT);
 
 			printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
-//			printf("sck1: %s:%d\r\n", sck_connection2.socket->endpoint, sck_connection2.socket->socket_conf.port);
 
 			// establish a connection
 			printf("cph_tcp_connect\r\n");
 			tcp_result result = cph_tcp_connect(&sck_connection);
-//			printf("cph_tcp_connect\r\n");
-//			tcp_result result2 = cph_tcp_connect(&sck_connection2);
-
 
 			if(result == SYS_TCP_OK) {
 				printf("successfully connected.\r\n");
 
 				// send a message once per second
 				while(true) {
-					result = cph_tcp_send(&sck_connection, packet, app_data_handler);
+
+					// *** NEW CODE ***
+//					uint8_t msg_buffer[128] = {0};
+//
+//					app_handler_queue2(msg_buffer);
+//
+//					if (msg_buffer != NULL) {
+//						uint8_t cmd = msg_buffer[0];
+//
+//						if (cmd == TAG) {
+//							tag_msg_t *msg = (tag_msg_t*) msg_buffer;
+//
+//
+//							#ifdef LOG_TAGMSG
+//								log_tag_msg(msg);
+//							#endif
+//							#ifdef WAN_TAGMSG_FORMAT_ASCII
+//								// convert to ascii
+//								wan_tagmsg_toascii(msg, packet_buffer_ascii);
+//								// send as ascii
+//								result = cph_tcp_send(&sck_connection, packet_buffer_ascii, app_data_handler);
+//							#else
+//								// else send as binary
+//								result = cph_tcp_send(&sck_connection, msg_buffer, app_data_handler);
+//							#endif
+//
+//
+//
+//						} else if (cmd == ROUTER_STATUS) {
+//							router_msg_t *msg = (router_msg_t*) tmp_buffer;
+//
+//							#ifdef LOG_TAGMSG
+//								log_router_msg(msg);
+//							#endif
+//						}
+//					}
+//					vTaskDelay(100);
+//					continue;
+					// *** END NEW CODE ***
+
+
+
+					app_handler_queue();
+
+					// check the queue for messages
+					result = xQueueReceive(xAppMessageQueue, tmp_ascii_buffer, QUEUE_TICKS);
+
+					// if we have a message send it
+					if(result == pdTRUE) {
+						printf("app msg received.\r\n");
+						result = cph_tcp_send(&sck_connection, tmp_ascii_buffer, app_data_handler);
+					}
+//					result = cph_tcp_send(&sck_connection, packet, app_data_handler);
 
 				}
 			}
@@ -227,7 +232,119 @@ void app_handler_socket(void)
 	}
 }
 
+static void app_handler_queue2(uint8_t *msg)
+{
+	BaseType_t result;
 
+	memset(tmp_buffer, 0, sizeof(tmp_buffer));
+
+	result = xQueueReceive(xWanMessagesQueue, tmp_buffer, QUEUE_TICKS);
+
+	if(result == pdTRUE) {
+		msg = tmp_buffer;
+	}
+	vTaskDelay(100);
+}
+
+static void app_handler_queue(void)
+{
+	tag_msg_t *msg;
+	BaseType_t result;
+
+	memset(tmp_buffer, 0, sizeof(tmp_buffer));
+
+	result = xQueueReceive(xWanMessagesQueue, tmp_buffer, QUEUE_TICKS);
+
+	if(result == pdTRUE) {
+
+		uint8_t cmd = tmp_buffer[0];
+
+		if(cmd == TAG) {
+
+			msg = (tag_msg_t*) tmp_buffer;
+
+#ifdef LOG_TAGMSG
+			log_tag_msg(msg);
+#endif
+
+#ifdef WAN_TAGMSG_FORMAT_ASCII
+			// ascii encode the message
+			wan_tagmsg_toascii(msg, packet_buffer_ascii);
+			// enqueue to local app buffer for processing by the socket handler
+			result = xQueueSendToBack( xAppMessageQueue, packet_buffer_ascii, (TickType_t)0);
+
+			if (result == pdTRUE) {
+				printf("app msg enqueued successfully\r\n");
+			}
+#endif
+
+
+		} else if (cmd == ROUTER_STATUS) {
+			printf("router status message\r\n");
+
+		}
+
+		// handle the message
+	}
+	vTaskDelay(100);
+
+}
+
+void app_task_unittest(void)
+{
+	uint8_t * ip_endpoint = "bs.cphandheld.com";
+
+	uint8_t * packet = "20000000,01,00000007802F6399,E16B,00000007802DE16B,1973,16,0001,0000,00C3,0000,0001,0000\r";
+
+	socket_connection_t sck_connection;
+
+	while(true) {
+		if(comm_network_state.context == 1) {
+			start_task = true;
+			break;
+		}
+		vTaskDelay(100);
+	}
+
+	while(true) {
+
+		if(start_task) {
+
+			start_task = false;
+
+			printf("start task.\r\n");
+
+			// create a new socket connection
+			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
+
+			printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
+
+			// establish a connection
+			printf("cph_tcp_connect\r\n");
+			tcp_result result = cph_tcp_connect(&sck_connection);
+
+			if(result == SYS_TCP_OK) {
+				printf("successfully connected.\r\n");
+
+				// send a message once per second
+				while(true) {
+
+					result = cph_tcp_send(&sck_connection, packet, app_data_handler);
+
+					vTaskDelay(500);
+
+				}
+			}
+		}
+	}
+}
+
+static void log_router_msg(router_msg_t *msg)
+{
+	wan_routermsg_toascii(msg, packet_buffer_ascii);
+	printf("***** router msg ascii ****\r\n");
+	printf("%s\r\n", packet_buffer_ascii);
+}
 
 static void log_tag_msg(tag_msg_t *msg)
 {

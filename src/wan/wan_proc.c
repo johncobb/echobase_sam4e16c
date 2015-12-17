@@ -35,7 +35,7 @@ static tag_msg_t *tag_msg;
 
 
 static void parse_tag(uint8_t *data, tag_msg_t *tag);
-static void parse_router_status(uint8_t *data, router_status_msg_t *msg);
+static void parse_router_status(uint8_t *data, router_msg_t *msg);
 static void monitor_ramdisk(void);
 static void log_tag_buffer(uint8_t * buffer);
 
@@ -58,7 +58,7 @@ static void wan_proc_task(void *pvParameters)
 {
 	BaseType_t result;
 	tag_msg_t tag_msg;
-	router_status_msg_t router_msg;
+	router_msg_t router_msg;
 
 	while (true) {
 		// initialize buffers
@@ -84,6 +84,15 @@ static void wan_proc_task(void *pvParameters)
 #endif
 
 					parse_tag(decoded_buffer, &tag_msg);
+
+					// special logging code here
+
+					static uint8_t tmp_buffer[128] = {0};
+					memset(tmp_buffer, '\0', 128);
+					wan_tagmsg_toascii(&tag_msg, tmp_buffer);
+					printf(tmp_buffer);
+					printf("\r\n");
+
 					result = xQueueSendToBack( xWanMessagesQueue, &tag_msg, (TickType_t)0);
 
 					if(result == pdTRUE) {
@@ -120,9 +129,9 @@ static void parse_tag(uint8_t *data, tag_msg_t *tag)
 	memcpy(tag, data, sizeof(tag_msg_t));
 }
 
-static void parse_router_status(uint8_t *data, router_status_msg_t *msg)
+static void parse_router_status(uint8_t *data, router_msg_t *msg)
 {
-	memcpy(msg, data, sizeof(router_status_msg_t));
+	memcpy(msg, data, sizeof(router_msg_t));
 }
 
 
