@@ -21,7 +21,6 @@
 #include "ring_buffer.h"
 #include "wan.h"
 #include "wan_task.h"
-#include "router_status_msg.h"
 #include "wan_msg.h"
 #include "cobs.h"
 #include "ramdisk.h"
@@ -165,6 +164,7 @@ void wan_handler_messages(void)
 
 				memcpy(cobs_encoded_msg, cobs_buffer, COBS_MSG_LEN);
 
+				// enqueue messages to xWanEncodedQueue for parsing by wan_proc.c
 				result = xQueueSendToBack( xWanEncodedQueue, cobs_encoded_msg, (TickType_t)0);
 
 				if(result == pdTRUE) {

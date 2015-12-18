@@ -20,8 +20,6 @@
 uint8_t packet_buffer_ascii[COBS_BUFFER_LEN] = {0};
 // tag variables
 static uint8_t msg_type = 0;
-static uint8_t rtr_mac[8] = {0};
-static uint8_t rtr_short[2] = {0};
 static uint8_t tag_mac[8] = {0};
 static uint8_t tag_short[2] = {0};
 static uint8_t tag_cfg[2] = {0};
@@ -32,18 +30,17 @@ static uint8_t tag_rssi = 0;
 static uint8_t tag_battery[2] = {0};
 static uint8_t tag_temp[2] = {0};
 
-// router variables
-static uint8_t rtr_reset = 0;
-static uint8_t rtr_reset_task = 0;
-static uint8_t rtr_serial[2] = {0};
-static uint8_t rtr_config_set = 0;
-static uint8_t rtr_msg_count[4] = {0};
-static uint8_t rtr_uptime[4] = {0};
-static uint8_t rtr_battery[4] = {0};
-static uint8_t rtr_temp[4] = {0};
-
-
-
+// anchor variables
+static uint8_t anchor_mac[8] = {0};
+static uint8_t anchor_short[2] = {0};
+static uint8_t anchor_reset = 0;
+static uint8_t anchor_reset_task = 0;
+static uint8_t anchor_serial[2] = {0};
+static uint8_t anchor_config_set[2] = {0};
+static uint8_t anchor_msg_count[4] = {0};
+static uint8_t anchor_uptime[4] = {0};
+static uint8_t anchor_battery[4] = {0};
+static uint8_t anchor_temp[4] = {0};
 
 
 freertos_usart_if wan_usart;
@@ -134,8 +131,8 @@ void wan_tagmsg_toascii(tag_msg_t *msg, uint8_t * buffer)
 
 
 	msg_type  = msg->messageType;
-	*((uint64_t*)rtr_mac) = msg->routerMac;
-	*((uint16_t*)rtr_short) = msg->routerShort;
+	*((uint64_t*)anchor_mac) = msg->anchorMac;
+	*((uint16_t*)anchor_short) = msg->anchorShort;
 	*((uint64_t*)tag_mac) = msg->tagMac;
 	// since we don't receive the macShort we need to build it
 	tag_short[0] = tag_mac[0];
@@ -152,16 +149,16 @@ void wan_tagmsg_toascii(tag_msg_t *msg, uint8_t * buffer)
 
 
 	sprintf(buffer, TCP_APPMSG_BUFFER, 	msg_type,
-										rtr_mac[7],
-										rtr_mac[6],
-										rtr_mac[5],
-										rtr_mac[4],
-										rtr_mac[3],
-										rtr_mac[2],
-										rtr_mac[1],
-										rtr_mac[0],
-										rtr_short[1],
-										rtr_short[0],
+										anchor_mac[7],
+										anchor_mac[6],
+										anchor_mac[5],
+										anchor_mac[4],
+										anchor_mac[3],
+										anchor_mac[2],
+										anchor_mac[1],
+										anchor_mac[0],
+										anchor_short[1],
+										anchor_short[0],
 										tag_mac[7],
 										tag_mac[6],
 										tag_mac[5],
@@ -189,53 +186,54 @@ void wan_tagmsg_toascii(tag_msg_t *msg, uint8_t * buffer)
 
 }
 
-void wan_routermsg_toascii(router_msg_t *msg, uint8_t * buffer)
+void wan_anchormsg_toascii(anchor_msg_t *msg, uint8_t * buffer)
 {
-	memset(buffer, '\0', RTRMSG_ASCII_SIZE);
+	memset(buffer, '\0', ANCHORMSG_ASCII_SIZE);
 
 	msg_type  = msg->messageType;
-	*((uint64_t*)rtr_mac) = msg->routerMac;
-	*((uint16_t*)rtr_short) = msg->routerShort;
-	rtr_reset = msg->routerReset;
-	rtr_reset_task = msg->resetTask;
-	*((uint16_t*)rtr_serial) = msg->routerSerial;
-	rtr_config_set = msg->routerConfigSet;
-	*((uint32_t*)rtr_msg_count) = msg->routerMsgCount;
-	*((uint32_t*)rtr_uptime) = msg->routerUptime;
-	*((uint32_t*)rtr_battery) = msg->routerBattery;
-	*((uint32_t*)rtr_temp) = msg->routerTemperature;
+	*((uint64_t*)anchor_mac) = msg->anchorMac;
+	*((uint16_t*)anchor_short) = msg->anchorShort;
+	anchor_reset = msg->anchorReset;
+	anchor_reset_task = msg->anchorResetTask;
+	*((uint16_t*)anchor_serial) = msg->anchorSerial;
+	*((uint16_t*)anchor_config_set) = msg->anchorConfigSet; // TODO: this should be a uint8_t
+	*((uint32_t*)anchor_msg_count) = msg->anchorMsgCount;
+	*((uint32_t*)anchor_uptime) = msg->anchorUptime;
+	*((uint32_t*)anchor_battery) = msg->anchorBattery;
+	*((uint32_t*)anchor_temp) = msg->anchorTemperature;
 
 	sprintf(buffer, TCP_RTRMSG_BUFFER, 	msg_type,
-										rtr_mac[7],
-										rtr_mac[6],
-										rtr_mac[5],
-										rtr_mac[4],
-										rtr_mac[3],
-										rtr_mac[2],
-										rtr_mac[1],
-										rtr_mac[0],
-										rtr_short[1],
-										rtr_short[0],
-										rtr_reset,
-										rtr_reset_task,
-										rtr_serial[1],
-										rtr_serial[0],
-										rtr_config_set,
-										rtr_msg_count[3],
-										rtr_msg_count[2],
-										rtr_msg_count[1],
-										rtr_msg_count[0],
-										rtr_uptime[3],
-										rtr_uptime[2],
-										rtr_uptime[1],
-										rtr_uptime[0],
-										rtr_battery[3],
-										rtr_battery[2],
-										rtr_battery[1],
-										rtr_battery[0],
-										rtr_temp[3],
-										rtr_temp[2],
-										rtr_temp[1],
-										rtr_temp[0]);
+										anchor_mac[7],
+										anchor_mac[6],
+										anchor_mac[5],
+										anchor_mac[4],
+										anchor_mac[3],
+										anchor_mac[2],
+										anchor_mac[1],
+										anchor_mac[0],
+										anchor_short[1],
+										anchor_short[0],
+										anchor_reset,
+										anchor_reset_task,
+										anchor_serial[1],
+										anchor_serial[0],
+										anchor_config_set[1],
+										anchor_config_set[0],
+										anchor_msg_count[3],
+										anchor_msg_count[2],
+										anchor_msg_count[1],
+										anchor_msg_count[0],
+										anchor_uptime[3],
+										anchor_uptime[2],
+										anchor_uptime[1],
+										anchor_uptime[0],
+										anchor_battery[3],
+										anchor_battery[2],
+										anchor_battery[1],
+										anchor_battery[0],
+										anchor_temp[3],
+										anchor_temp[2],
+										anchor_temp[1],
+										anchor_temp[0]);
 }
 

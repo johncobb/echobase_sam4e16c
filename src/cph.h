@@ -24,7 +24,7 @@
 #define WAN_RTRMSG_FORMAT_ASCII		1
 
 #define LOG_TAGMSG					1
-#define LOG_RTRMSG					1
+#define LOG_ANCHORMSG					1
 //#define LOG_MSG_COBSENCODED			1
 //#define LOG_MSG_COBSDECODED			1
 

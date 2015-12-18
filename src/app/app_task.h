@@ -9,6 +9,8 @@
 #define APP_TASK_H_
 
 
+
+
 QueueHandle_t xAppMessageQueue;
 extern xSemaphoreHandle app_start_signal;
 

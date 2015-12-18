@@ -163,16 +163,11 @@ int main(void) {
 	configure_console();
 	printf("CPH EchoBase SAM4E16C %s\r\n", SOFTWARE_VER_STRING);
 
-	// unit tests
-//	test_ramdisk();
-
-
-
 //	printf("create_uart_cli_task\r\n");
 //	create_uart_cli_task(CONSOLE_UART, mainUART_CLI_TASK_STACK_SIZE, mainUART_CLI_TASK_PRIORITY);
 
-//	printf("create_comm_task\r\n");
-//	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
+	printf("create_comm_task\r\n");
+	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
 
 	printf("create_wan_task\r\n");
 	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);

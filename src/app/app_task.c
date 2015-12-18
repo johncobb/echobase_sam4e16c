@@ -24,6 +24,8 @@
 #include <cph.h>
 
 QueueHandle_t xAppMessageQueue;
+QueueHandle_t xTagMessageQueue;
+QueueHandle_t xAnchorMessageQueue;
 xSemaphoreHandle app_start_signal = 0;
 
 
@@ -34,38 +36,32 @@ static void app_handler_task(void *pvParameters);
 
 static void app_handler(void);
 static void app_handler_queue(void);
-static void app_handler_queue2(uint8_t *msg);
+static void app_handler_msgqueue(void);
+static void app_handler_anchorqueue(void);
+
 
 
 static void log_tag_msg(tag_msg_t *msg);
-static void log_router_msg(router_msg_t *msg);
+static void log_anchor_msg(anchor_msg_t *msg);
 
 static void app_data_handler(uint8_t *data, uint32_t len);
 static sys_result parse_result(char * buffer, char * token, char ** ptr_out);
 
 
-//[0] - BaseStationId,           uint32_t
-//[1] - MessageType,             uint8_t
-//[2] - RouterMacAddress,        uint64_t
-//[3] - RouterMacShortAddress,   uint16_t
-//[4] - TagMacAddress,           uint64_t
-//[5] - TagMacShortAddress,      uint32_t
-//[6] - ConfigSet,               uint8_t
-//[7] - Serial,                  uint8_t
-//[8] - Status,                  uint16_t
-//[9] - LQI ,                    uint8_t
-//[10] - Rssi,                   uint8_t
-//[11] - Battery,                uint16_t
-//[12] - Temperature,            uint16_t
 
 static uint8_t tmp_buffer[COBS_MSG_LEN] = {0};
-static uint8_t tmp_ascii_buffer[TAGMSG_ASCII_SIZE] = {0};
+static uint8_t socket_ascii_buffer[TAGMSG_ASCII_SIZE] = {0};
 
 
 void create_app_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_priority)
 {
 
+	// queue for handling outbound messages
 	xAppMessageQueue = xQueueCreate(10, TAGMSG_ASCII_SIZE);
+	// queue for handling tag messages
+	xTagMessageQueue = xQueueCreate(10, TAGMSG_ASCII_SIZE);
+	// queue for handling anchor messeage
+	xAnchorMessageQueue = xQueueCreate(10, TAGMSG_ASCII_SIZE);
 
 //	vSemaphoreCreateBinary(app_start_signal);
 
@@ -121,11 +117,13 @@ static sys_result parse_result(char * buffer, char * token, char ** ptr_out)
 
 static void app_handler_task(void *pvParameters)
 {
+
+#ifdef UNITTEST_WAN_ENABLE
+	test_wan();
+#endif
 	app_handler();
+
 }
-
-
-
 
 
 void app_handler(void)
@@ -143,6 +141,7 @@ void app_handler(void)
 		}
 		vTaskDelay(100);
 	}
+
 
 	while(true) {
 
@@ -167,56 +166,20 @@ void app_handler(void)
 				// send a message once per second
 				while(true) {
 
-					// *** NEW CODE ***
-//					uint8_t msg_buffer[128] = {0};
-//
-//					app_handler_queue2(msg_buffer);
-//
-//					if (msg_buffer != NULL) {
-//						uint8_t cmd = msg_buffer[0];
-//
-//						if (cmd == TAG) {
-//							tag_msg_t *msg = (tag_msg_t*) msg_buffer;
-//
-//
-//							#ifdef LOG_TAGMSG
-//								log_tag_msg(msg);
-//							#endif
-//							#ifdef WAN_TAGMSG_FORMAT_ASCII
-//								// convert to ascii
-//								wan_tagmsg_toascii(msg, packet_buffer_ascii);
-//								// send as ascii
-//								result = cph_tcp_send(&sck_connection, packet_buffer_ascii, app_data_handler);
-//							#else
-//								// else send as binary
-//								result = cph_tcp_send(&sck_connection, msg_buffer, app_data_handler);
-//							#endif
-//
-//
-//
-//						} else if (cmd == ROUTER_STATUS) {
-//							router_msg_t *msg = (router_msg_t*) tmp_buffer;
-//
-//							#ifdef LOG_TAGMSG
-//								log_router_msg(msg);
-//							#endif
-//						}
-//					}
-//					vTaskDelay(100);
-//					continue;
-					// *** END NEW CODE ***
-
-
-
+					// handle incoming messages
 					app_handler_queue();
+					// handle incoming tag messages
+					app_handler_msgqueue();
+					// handle incoming anchor messages
+					app_handler_anchorqueue();
 
 					// check the queue for messages
-					result = xQueueReceive(xAppMessageQueue, tmp_ascii_buffer, QUEUE_TICKS);
+					result = xQueueReceive(xAppMessageQueue, socket_ascii_buffer, QUEUE_TICKS);
 
 					// if we have a message send it
 					if(result == pdTRUE) {
-						printf("app msg received.\r\n");
-						result = cph_tcp_send(&sck_connection, tmp_ascii_buffer, app_data_handler);
+						printf("msg received.\r\n");
+						result = cph_tcp_send(&sck_connection, socket_ascii_buffer, app_data_handler);
 					}
 //					result = cph_tcp_send(&sck_connection, packet, app_data_handler);
 
@@ -225,31 +188,18 @@ void app_handler(void)
 		}
 	}
 
-
 	while(true) {
 
 		vTaskDelay(500);
 	}
 }
 
-static void app_handler_queue2(uint8_t *msg)
-{
-	BaseType_t result;
-
-	memset(tmp_buffer, 0, sizeof(tmp_buffer));
-
-	result = xQueueReceive(xWanMessagesQueue, tmp_buffer, QUEUE_TICKS);
-
-	if(result == pdTRUE) {
-		msg = tmp_buffer;
-	}
-	vTaskDelay(100);
-}
-
 static void app_handler_queue(void)
 {
-	tag_msg_t *msg;
 	BaseType_t result;
+
+	tag_msg_t *tag_msg;
+	anchor_msg_t *anchor_msg;
 
 	memset(tmp_buffer, 0, sizeof(tmp_buffer));
 
@@ -261,33 +211,74 @@ static void app_handler_queue(void)
 
 		if(cmd == TAG) {
 
-			msg = (tag_msg_t*) tmp_buffer;
-
-#ifdef LOG_TAGMSG
-			log_tag_msg(msg);
-#endif
-
-#ifdef WAN_TAGMSG_FORMAT_ASCII
-			// ascii encode the message
-			wan_tagmsg_toascii(msg, packet_buffer_ascii);
-			// enqueue to local app buffer for processing by the socket handler
-			result = xQueueSendToBack( xAppMessageQueue, packet_buffer_ascii, (TickType_t)0);
+			tag_msg = (tag_msg_t*) tmp_buffer;
+			result = xQueueSendToBack( xTagMessageQueue, tag_msg, (TickType_t)0);
 
 			if (result == pdTRUE) {
-				printf("app msg enqueued successfully\r\n");
+				printf("tag_msg enqueued successfully\r\n");
 			}
-#endif
 
+			#ifdef LOG_TAGMSG
+				log_tag_msg(tag_msg);
+			#endif
+		} else if (cmd == ANCHOR_STATUS) {
 
-		} else if (cmd == ROUTER_STATUS) {
-			printf("router status message\r\n");
+			anchor_msg = (anchor_msg_t*) tmp_buffer;
+			result = xQueueSendToBack( xAnchorMessageQueue, tag_msg, (TickType_t)0);
 
+			if (result == pdTRUE) {
+				printf("anchor_msg enqueued successfully\r\n");
+			}
+
+			#ifdef LOG_ANCHORMSG
+				log_anchor_msg(anchor_msg);
+			#endif
 		}
 
-		// handle the message
 	}
 	vTaskDelay(100);
 
+}
+
+static void app_handler_msgqueue(void)
+{
+	BaseType_t result;
+	tag_msg_t *tag_msg;
+
+	memset(tmp_buffer, 0, sizeof(tmp_buffer));
+
+	result = xQueueReceive(xTagMessageQueue, tmp_buffer, QUEUE_TICKS);
+
+	if(result == pdTRUE) {
+		tag_msg = (tag_msg_t*) tmp_buffer;
+
+		static uint8_t packet_buffer_ascii[TAGMSG_ASCII_SIZE] = {0};
+
+		wan_tagmsg_toascii(tag_msg, packet_buffer_ascii);
+
+		result = xQueueSendToBack(xAppMessageQueue, tag_msg, (TickType_t)0);
+	}
+
+}
+
+static void app_handler_anchorqueue(void)
+{
+	BaseType_t result;
+	anchor_msg_t *anchor_msg;
+
+	memset(tmp_buffer, 0, sizeof(tmp_buffer));
+
+	result = xQueueReceive(xAnchorMessageQueue, tmp_buffer, QUEUE_TICKS);
+
+	if(result == pdTRUE) {
+		anchor_msg = (anchor_msg_t*) tmp_buffer;
+
+		static uint8_t packet_buffer_ascii[TAGMSG_ASCII_SIZE] = {0};
+
+		wan_anchormsg_toascii(anchor_msg, packet_buffer_ascii);
+
+		result = xQueueSendToBack(xAppMessageQueue, anchor_msg, (TickType_t)0);
+	}
 }
 
 void app_task_unittest(void)
@@ -339,76 +330,26 @@ void app_task_unittest(void)
 	}
 }
 
-static void log_router_msg(router_msg_t *msg)
+
+void log_tag_msg(tag_msg_t *tag_msg)
 {
-	wan_routermsg_toascii(msg, packet_buffer_ascii);
-	printf("***** router msg ascii ****\r\n");
-	printf("%s\r\n", packet_buffer_ascii);
+	static uint8_t printf_buffer[TAGMSG_ASCII_SIZE] = {0};
+
+	wan_tagmsg_toascii(tag_msg, printf_buffer);
+
+	printf(printf_buffer);
+	printf("\r\n");
 }
 
-static void log_tag_msg(tag_msg_t *msg)
+void log_anchor_msg(anchor_msg_t *anchor_msg)
 {
+	static uint8_t printf_buffer[ANCHORMSG_ASCII_SIZE] = {0};
 
-	// first copy msg into ascii buffer
-	wan_tagmsg_toascii(msg, packet_buffer_ascii);
-
-	printf("***** tag msg ascii ****\r\n");
-	printf("%s\r\n", packet_buffer_ascii);
-
-//
-//				printf("msgType: %02x\r\n", msg_type);
-//				printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	rtr_mac[7],
-//																					rtr_mac[6],
-//																					rtr_mac[5],
-//																					rtr_mac[4],
-//																					rtr_mac[3],
-//																					rtr_mac[2],
-//																					rtr_mac[1],
-//																					rtr_mac[0]);
-//
-//				printf("routerShort: %02x:%02x\r\n",	rtr_short[1],
-//														rtr_short[0]);
-//
-//				printf("tagMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	tag_mac[7],
-//																				tag_mac[6],
-//																				tag_mac[5],
-//																				tag_mac[4],
-//																				tag_mac[3],
-//																				tag_mac[2],
-//																				tag_mac[1],
-//																				tag_mac[0]);
-//
-//				printf("tagShort: %02x:%02x\r\n",		tag_short[1],
-//														tag_short[0]);
-//
-//				printf("tagConfig: %02x:%02x\r\n",		tag_cfg[1],
-//														tag_cfg[0]);
-//
-//				printf("tagSerial: %02x:%02x\r\n",		tag_serial[1],
-//														tag_serial[0]);
-//
-//				printf("tagStatus: %02x:%02x\r\n",		tag_status[1],
-//														tag_status[0]);
-//
-//				printf("tagLqi: %02x\r\n", tag_lqi);
-//				printf("tagRssi: %02x\r\n", tag_rssi);
-//
-//				printf("tagBattery: %02x:%02x\r\n",		tag_battery[3],
-//														tag_battery[2],
-//														tag_battery[1],
-//														tag_battery[0]);
-//
-//				printf("tagTemperature: %02x:%02x\r\n",	tag_temp[3],
-//														tag_temp[2],
-//														tag_temp[1],
-//														tag_temp[0]);
-
+	wan_anchormsg_toascii(anchor_msg, printf_buffer);
+	printf(printf_buffer);
+	printf("\r\n");
+	return;
 }
-
-
-
-
-
 
 
 

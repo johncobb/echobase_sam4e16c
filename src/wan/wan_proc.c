@@ -21,7 +21,6 @@
 #include "ring_buffer.h"
 #include "wan.h"
 #include "wan_task.h"
-#include "router_status_msg.h"
 #include "wan_msg.h"
 #include "cobs.h"
 #include "ramdisk.h"
@@ -34,8 +33,7 @@ static tag_msg_t *tag_next_msg = NULL;
 static tag_msg_t *tag_msg;
 
 
-static void parse_tag(uint8_t *data, tag_msg_t *tag);
-static void parse_router_status(uint8_t *data, router_msg_t *msg);
+
 static void monitor_ramdisk(void);
 static void log_tag_buffer(uint8_t * buffer);
 
@@ -53,45 +51,45 @@ void create_wan_proc_task(uint16_t stack_depth_words, unsigned portBASE_TYPE tas
 
 
 
-// handle messages encoded to the xWanQueue
+// handle cobs encoded messages from xWanEncodedQueue
 static void wan_proc_task(void *pvParameters)
 {
 	BaseType_t result;
 	tag_msg_t tag_msg;
-	router_msg_t router_msg;
+	anchor_msg_t anchor_msg;
 
 	while (true) {
 		// initialize buffers
 		memset(encoded_buffer, '\0', COBS_MSG_LEN);
 		memset(decoded_buffer, '\0', COBS_MSG_LEN);
 
+		// read messages enqueued to xWanEncodedQueue from wan_task.c
 		result = xQueueReceive(xWanEncodedQueue, encoded_buffer, WAN_QUEUE_TICKS);
 
 		if(result == pdTRUE) {
-
 
 			// decode the message
 			decode_cobs(encoded_buffer, COBS_MSG_LEN, decoded_buffer);
 
 			uint8_t cmd = decoded_buffer[0];
 
+			// tmp_buffer used for temporary printf logging
+			static uint8_t tmp_buffer[128] = {0};
+
 			switch (cmd) {
 				case TAG:
-//					printf("tag size: %d\r\n", sizeof(tag_msg_t));
 
 #ifdef LOG_MSG_COBSDECODED
 					log_tag_buffer(decoded_buffer);
 #endif
 
-					parse_tag(decoded_buffer, &tag_msg);
+					parse_tag_msg(decoded_buffer, &tag_msg);
 
 					// special logging code here
-
-					static uint8_t tmp_buffer[128] = {0};
-					memset(tmp_buffer, '\0', 128);
-					wan_tagmsg_toascii(&tag_msg, tmp_buffer);
-					printf(tmp_buffer);
-					printf("\r\n");
+//					memset(tmp_buffer, '\0', 128);
+//					wan_tagmsg_toascii(&tag_msg, tmp_buffer);
+//					printf(tmp_buffer);
+//					printf("\r\n");
 
 					result = xQueueSendToBack( xWanMessagesQueue, &tag_msg, (TickType_t)0);
 
@@ -107,9 +105,24 @@ static void wan_proc_task(void *pvParameters)
 //					// write to ramdisk
 //					ramdisk_write(record);
 					break;
-				case ROUTER_STATUS:
-//					parse_router_status(decoded_buffer, &router_msg);
-					// enqueue into modem
+				case ANCHOR_STATUS:
+
+					parse_anchor_msg(decoded_buffer, &anchor_msg);
+
+					// special logging code here
+//					memset(tmp_buffer, '\0', 128);
+//					wan_anchormsg_toascii(&anchor_msg, tmp_buffer);
+//					printf(tmp_buffer);
+//					printf("\r\n");
+
+					result = xQueueSendToBack( xWanMessagesQueue, &anchor_msg, (TickType_t)0);
+
+					if(result == pdTRUE) {
+//						printf("enqueued successfully\r\n");
+					} else {
+						printf("failed to enqueue!\r\n");
+					}
+
 					break;
 			}
 
@@ -122,16 +135,14 @@ static void wan_proc_task(void *pvParameters)
 }
 
 
-static void parse_tag(uint8_t *data, tag_msg_t *tag)
+void parse_tag_msg(uint8_t *data, tag_msg_t *tag)
 {
-	memcpy(tag->messageType, data, 1);
-
 	memcpy(tag, data, sizeof(tag_msg_t));
 }
 
-static void parse_router_status(uint8_t *data, router_msg_t *msg)
+void parse_anchor_msg(uint8_t *data, anchor_msg_t *msg)
 {
-	memcpy(msg, data, sizeof(router_msg_t));
+	memcpy(msg, data, sizeof(anchor_msg_t));
 }
 
 
@@ -140,7 +151,7 @@ static void log_tag_buffer(uint8_t * decoded_buffer)
 	printf("***** decoded ****\r\n");
 	printf("messageType: %02x\r\n", decoded_buffer[0]);
 
-	printf("routerMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	decoded_buffer[8],
+	printf("anchorMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	decoded_buffer[8],
 																		decoded_buffer[7],
 																		decoded_buffer[6],
 																		decoded_buffer[5],
@@ -149,7 +160,7 @@ static void log_tag_buffer(uint8_t * decoded_buffer)
 																		decoded_buffer[2],
 																		decoded_buffer[1]);
 
-	printf("routerShort: %02x:%02x\r\n", 	decoded_buffer[10],
+	printf("anchorShort: %02x:%02x\r\n", 	decoded_buffer[10],
 											decoded_buffer[9]);
 
 	printf("tagMac: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x\r\n",	decoded_buffer[18],
