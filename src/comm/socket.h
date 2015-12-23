@@ -86,6 +86,7 @@ typedef struct
 	modem_socket_conf_t socket_conf;
 	uint8_t endpoint[SOCKET_IPENDPOINT_LEN+1];
 	uint8_t rx_buffer[SOCKET_BUFFER_LEN+1];
+	uint8_t tx_buffer[SOCKET_BUFFER_LEN];
 	socket_func_t handle_data;
 	uint32_t bytes_received;
 	comm_task_t task_handler;

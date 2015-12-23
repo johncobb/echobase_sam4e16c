@@ -1,9 +1,10 @@
 /*
- * comm_send.c
+ * comm_receive.c
  *
- *  Created on: Jul 22, 2015
+ *  Created on: Dec 23, 2015
  *      Author: jcobb
  */
+
 
 #include <string.h>
 #include "socket.h"
@@ -11,65 +12,64 @@
 #include "modem.h"
 #include "telit_modem_api.h"
 #include "comm.h"
-#include "comm_send.h"
+#include "comm_receive.h"
 #include "http_handler.h"
 
+typedef enum
+{
+	COMM_RECEIVE_RX = 0,
+	COMM_RECEIVE_RX_ABORT
+}comm_receive_state_t;
 
 typedef enum
 {
-	COMM_SEND_TRANSFERDATA = 0,
-	COMM_SEND_ABORT_TRANSFERDATA
-}comm_send_state_t;
-
-typedef enum
-{
-	COMM_SEND_INVOKE = 0,
-	COMM_SEND_WAITREPLY = 1
-}comm_send_sub_state_t;
+	COMM_RECEIVE_INVOKE = 0,
+	COMM_RECEIVE_WAITREPLY = 1
+}comm_receive_sub_state_t;
 
 
 
-
-sys_result  comm_send(modem_socket_t * socket)
+sys_result  comm_receive(modem_socket_t * socket)
 {
 	sys_result result;
 
-	if(socket->state_handle.state == COMM_SEND_TRANSFERDATA) {
+	if(socket->state_handle.state == COMM_RECEIVE_RX) {
 
-		if(socket->state_handle.substate == COMM_SEND_INVOKE) {
+		if(socket->state_handle.substate == COMM_RECEIVE_INVOKE) {
 			printf("socket(%d) write...\r\n", socket->socket_id);
 
+			// prepare the socket receive buffer
 			memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
-
 			socket->bytes_received = 0;
-			modem_socketwrite(socket, socket->tx_buffer);
 
-			socket_entersubstate(socket, COMM_SEND_WAITREPLY);
-			socket_settimeout(socket, DEFAULT_COMM_SOCKETSEND_TIMEOUT);
+			socket_entersubstate(socket, COMM_RECEIVE_WAITREPLY);
+
+			socket_settimeout(socket, DEFAULT_COMM_SOCKETRECEIVE_TIMEOUT);
 
 			result = SYS_OK;
-		} else if(socket->state_handle.substate == COMM_SEND_WAITREPLY) {
+		} else if(socket->state_handle.substate == COMM_RECEIVE_WAITREPLY) {
 
 			// wait up to n seconds.
 			if(socket_timeout(socket)) {
 				socket->socket_error = SCK_ERR_TIMEOUT;
 
-				printf("socket(%d) send timeout\r\n", socket->socket_id);
+				printf("socket(%d) receive timeout\r\n", socket->socket_id);
 
-				// TODO: review for proper transition after send
-				// option 1: after sending suspend the connection
+				// TODO: review for proper transition after receive
 				comm_enterstate(socket, COMM_IDLE);
 				socket_exitstate(socket);
-				xSemaphoreGive(tcp_send_signal);
+				xSemaphoreGive(tcp_receive_signal);
 				result = SYS_OK;
 
 			}
 
+			// if we receive byts we need to copy the data and signal the
+			// function to return
 			if(socket->bytes_received > 0) {
 //				printf("bytes_received: %lu, %s\r\n", socket->bytes_received, socket->rx_buffer);
 				socket->handle_data(socket->rx_buffer, socket->bytes_received);
 				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
-				xSemaphoreGive(tcp_send_signal);
+				xSemaphoreGive(tcp_receive_signal);
 			}
 			result = SYS_OK;
 		}

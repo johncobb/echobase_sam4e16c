@@ -21,6 +21,7 @@
 
 xSemaphoreHandle tcp_connect_signal = 0;
 xSemaphoreHandle tcp_send_signal = 0;
+xSemaphoreHandle tcp_receive_signal = 0;
 xSemaphoreHandle tcp_suspend_signal = 0;
 xSemaphoreHandle tcp_close_signal = 0;
 
@@ -101,10 +102,6 @@ void cph_tcp_newrequest(socket_connection_t *cnx, comm_request_t *request)
 
 tcp_result cph_tcp_connect(socket_connection_t *cnx)
 {
-
-
-
-
 	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
 	tcp_result result;
 
@@ -172,6 +169,9 @@ tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_func_t
 	connection_settimeout(cnx, DEFAULT_TCIP_SENDTIMEOUT);
 
 	cnx->socket->handle_data = handler;
+	// copy the data packet into the socket's tx_buffer
+	memcpy(cnx->socket->tx_buffer, packet, SOCKET_BUFFER_LEN);
+
 
 
 	if(xQueueSendToBack( xCommQueueRequest, &request, (TickType_t)0) == pdTRUE) {
@@ -187,6 +187,45 @@ tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_func_t
 	return result;
 
 }
+
+// synchronous cph_tcp_receive message
+// this function returns whatever data is received from the port
+// and copies into the data buffer passed in
+tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_func_t handler)
+{
+	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
+	tcp_result result;
+
+	comm_request_t request;
+
+	request.type = REQUEST_RECEIVE;
+
+	connection_settimeout(cnx, DEFAULT_TCIP_RECEIVETIMEOUT);
+
+	// this is a synchronous call so we don't want to
+	// execute the callback handle_data
+//	cnx->socket->handle_data = NULL;
+
+
+	if(xQueueSendToBack( xCommQueueRequest, &request, (TickType_t)0) == pdTRUE) {
+		result = SYS_TCP_OK;
+	} else {
+		result = SYS_ERR_TCP_FAIL_REQUESTENQUEUE;
+	}
+
+	if(xSemaphoreTake(tcp_receive_signal, portMAX_DELAY)) {
+
+		if(cnx->socket->bytes_received > 0) {
+
+			printf("cph_tcp_receive: bytes %d\r\n", cnx->socket->bytes_received);
+			memcpy(data, cnx->socket->rx_buffer, cnx->socket->bytes_received);
+		}
+	}
+
+	return result;
+
+}
+
 
 tcp_result cph_tcp_suspend(socket_connection_t *cnx)
 {

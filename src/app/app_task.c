@@ -36,7 +36,7 @@ static void app_handler_task(void *pvParameters);
 
 static void app_handler(void);
 static void app_handler_queue(void);
-static void app_handler_msgqueue(void);
+static void app_handler_tagqueue(void);
 static void app_handler_anchorqueue(void);
 
 
@@ -169,7 +169,7 @@ void app_handler(void)
 					// handle incoming messages
 					app_handler_queue();
 					// handle incoming tag messages
-					app_handler_msgqueue();
+					app_handler_tagqueue();
 					// handle incoming anchor messages
 					app_handler_anchorqueue();
 
@@ -240,7 +240,7 @@ static void app_handler_queue(void)
 
 }
 
-static void app_handler_msgqueue(void)
+static void app_handler_tagqueue(void)
 {
 	BaseType_t result;
 	tag_msg_t *tag_msg;

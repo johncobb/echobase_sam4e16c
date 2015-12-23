@@ -20,6 +20,7 @@
 #include "comm_idle.h"
 #include "comm_connect.h"
 #include "comm_send.h"
+#include "comm_receive.h"
 #include "comm_suspend.h"
 #include "comm_close.h"
 #include "comm_udp.h"
@@ -40,6 +41,7 @@ xSemaphoreHandle comm_signal;
 
 extern xSemaphoreHandle tcp_connect_signal;
 extern xSemaphoreHandle tcp_send_signal;
+extern xSemaphoreHandle tcp_receive_signal;
 extern xSemaphoreHandle tcp_suspend_signal;
 extern xSemaphoreHandle tcp_close_signal;
 
@@ -48,6 +50,7 @@ extern xSemaphoreHandle tcp_close_signal;
 #define DEFAULT_COMM_SOCKETRESUME_TIMEOUT		5000
 #define DEFAULT_COMM_SOCKETSTATUS_TIMEOUT		500
 #define DEFAULT_COMM_SOCKETSEND_TIMEOUT			1000
+#define DEFAULT_COMM_SOCKETRECEIVE_TIMEOUT		1000
 #define DEFAULT_COMM_SOCKETSUSPEND_TIMEOUT		5000
 #define DEFAULT_COMM_SOCKETCLOSE_TIMEOUT		5000
 
@@ -73,6 +76,7 @@ typedef enum
 	COMM_RESET,
 	COMM_CONNECT,
 	COMM_SEND,
+	COMM_RECEIVE,
 	COMM_SUSPEND,
 	COMM_CLOSE,
 	COMM_WAITNEXTSTATE,
@@ -104,6 +108,7 @@ typedef enum
 	REQUEST_CONNECT = 0,
 	REQUEST_SEND,
 	REQUEST_GET,
+	REQUEST_RECEIVE,
 	REQUEST_CLOSE,
 	REQUEST_ABORT,
 	REQUEST_SUSPEND

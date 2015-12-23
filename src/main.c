@@ -60,6 +60,7 @@ delete-task:
 #define mainWAN_TASK_PRIORITY					(tskIDLE_PRIORITY + 1)
 #define mainWANPROC_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainAPPTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainPRINTTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* The stack sizes allocated to the various tasks. */
 #define mainUART_CLI_TASK_STACK_SIZE    		(1024)
@@ -68,6 +69,7 @@ delete-task:
 #define mainWANPROC_TASK_STACK_SIZE				(1024)
 #define mainCOMM_TASK_STACK_SIZE				(2048)
 #define mainAPPTASK_TASK_STACK_SIZE				(2048)
+#define mainPRINTTASK_TASK_STACK_SIZE			(2048)
 
 
 // TODO: REVIEW STACK SIZE ALLOCATION
@@ -148,7 +150,6 @@ static void configure_console(void) {
 	      //US_MR_CHMODE_NORMAL
 	   };
 
-	usart_serial_init(PRINTF_UART, &uart_serial_options);
 	stdio_serial_init(PRINTF_UART, &uart_serial_options);
 
 	usart_enable_tx(PRINTF_UART);
@@ -166,17 +167,24 @@ int main(void) {
 //	printf("create_uart_cli_task\r\n");
 //	create_uart_cli_task(CONSOLE_UART, mainUART_CLI_TASK_STACK_SIZE, mainUART_CLI_TASK_PRIORITY);
 
+
+//	modem_sockets[0].socket_conf.port = 1665;
+	modem_sockets[0].socket_conf.port = 1889;
+
 	printf("create_comm_task\r\n");
 	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
 
-	printf("create_wan_task\r\n");
-	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);
+//	printf("create_wan_task\r\n");
+//	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);
 
-	printf("create_proc_wan_task\r\n");
-	create_wan_proc_task(mainWANPROC_TASK_STACK_SIZE, mainWANPROC_TASK_PRIORITY);
+//	printf("create_proc_wan_task\r\n");
+//	create_wan_proc_task(mainWANPROC_TASK_STACK_SIZE, mainWANPROC_TASK_PRIORITY);
 
-	printf("create_apptask_task\r\n");
-	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
+//	printf("create_apptask_task\r\n");
+//	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
+
+	printf("create_printtask_task\r\n");
+	create_printer_task(mainPRINTTASK_TASK_STACK_SIZE, mainPRINTTASK_TASK_PRIORITY);
 
 	printf("create_led_task\r\n");
 	create_led_task();

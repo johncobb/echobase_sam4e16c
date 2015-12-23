@@ -13,6 +13,7 @@
 
 #define DEFAULT_TCIP_CONNECTTIMEOUT	10000
 #define DEFAULT_TCIP_SENDTIMEOUT	1000
+#define DEFAULT_TCIP_RECEIVETIMEOUT	1000
 
 typedef enum
 {
@@ -32,6 +33,7 @@ tcp_result tcp_output(void);
 
 tcp_result cph_tcp_connect(socket_connection_t *cnx);
 tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_func_t handler);
+tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_func_t handler);
 tcp_result cph_tcp_suspend(socket_connection_t *cnx);
 tcp_result cph_tcp_resume(socket_connection_t *cnx);
 tcp_result cph_tcp_close();
