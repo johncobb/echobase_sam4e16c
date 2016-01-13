@@ -90,6 +90,74 @@ void init_hw(void)
 	pio_set_pin_low(MDM_RESET_IDX);
 	pio_set_pin_low(MDM_ONOFF_IDX);
 
+	printf("checking modem power monitor\r\n");
+
+	// Chek for power on
+
+	uint8_t num_tries = 0;
+	uint32_t powmon = 0;
+
+	while(true) {
+
+
+		if(num_tries++ == 3) break;
+
+		vTaskDelay(3000);
+
+		powmon = pio_get_pin_value(MDM_POWMON_IDX);
+		vTaskDelay(10);
+
+		printf("modem_powmon=%d\r\n", powmon);
+
+		if(powmon == 0) {
+			printf("modem_powmon: LOW\r\n");
+			break;
+		} else {
+			//printf("toggle modem enable high-low\r\n");
+			pio_set_pin_low(MDM_ENABLE_IDX);
+			vTaskDelay(20);
+			pio_set_pin_high(MDM_ENABLE_IDX);
+		}
+	}
+
+
+	while(true) {
+		printf("toggle modem_onoff: HIGH\r\n");
+		printf("wait 3 sec...\r\n");
+		pio_set_pin_high(MDM_ONOFF_IDX);
+
+		vTaskDelay(3000);
+
+		printf("toggle modem_onoff: LOW\r\n");
+		printf("wait 3 sec...\r\n");
+		pio_set_pin_low(MDM_ONOFF_IDX);
+
+		vTaskDelay(2000);
+
+		powmon = pio_get_pin_value(MDM_POWMON_IDX);
+
+		if(powmon == 1) {
+			printf("modem_powmon: HIGH\r\n");
+			printf("modem powered on!\r\n");
+			break;
+		}
+
+	}
+
+	printf("init_hw done\r\n");
+
+}
+
+void init_hw2(void)
+{
+
+	//printf("initializing modem hardware...\r\n");
+	//SEND_AT("init_hw\r\n");
+	// Sanity check make sure pins are low
+	pio_set_pin_low(MDM_ENABLE_IDX);
+	pio_set_pin_low(MDM_RESET_IDX);
+	pio_set_pin_low(MDM_ONOFF_IDX);
+
 	//printf("checking modem power monitor\r\n");
 
 	// Chek for power on

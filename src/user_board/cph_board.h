@@ -205,7 +205,8 @@ void board_init_printf_uart(void);
 #define MDM_POWMON_PIO   		PIOD
 #define MDM_POWMON_ID    		ID_PIOD
 #define MDM_POWMON_TYPE  		PIO_INPUT
-#define MDM_POWMON_ATTR			PIO_PULLUP
+//#define MDM_POWMON_ATTR			PIO_PULLUP
+#define MDM_POWMON_ATTR			PIO_DEFAULT
 
 
 #endif  // _CPH_BOARD_H

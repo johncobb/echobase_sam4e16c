@@ -128,7 +128,7 @@ void task_handler(void)
 				while(true) {
 
 
-					result = cph_tcp_send(&sck_connection, "1111\r", socket_handler_cb);
+					result = cph_tcp_send(&sck_connection, "abcdefghijklmnopqrstuvwxyz0123456789\r", socket_handler_cb);
 
 					printf("cph_tcp_send result: %d\r\n", result);
 
