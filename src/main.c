@@ -158,6 +158,7 @@ static void configure_console(void) {
 
 int main(void) {
 
+
 	cph_clock_init();
 	board_init();
 
@@ -169,7 +170,7 @@ int main(void) {
 
 
 //	modem_sockets[0].socket_conf.port = 1665;
-	modem_sockets[0].socket_conf.port = 1889;
+	modem_sockets[0].socket_conf.port = 80;
 
 	printf("create_comm_task\r\n");
 	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);

@@ -36,7 +36,7 @@ sys_result  comm_receive(modem_socket_t * socket)
 	if(socket->state_handle.state == COMM_RECEIVE_RX) {
 
 		if(socket->state_handle.substate == COMM_RECEIVE_INVOKE) {
-			printf("socket(%d) write...\r\n", socket->socket_id);
+			printf("socket(%d) receive...\r\n", socket->socket_id);
 
 			// prepare the socket receive buffer
 			memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);

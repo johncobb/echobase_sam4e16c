@@ -13,7 +13,7 @@
 #include "comm_if.h"
 #include "http_handler.h"
 
-
+//#define SOCKET_ROUNDROBIN			1
 #define SOCKET_POOL_LEN				6
 #define SOCKET_BUFFER_LEN			128
 #define SOCKET_IPENDPOINT_LEN		256

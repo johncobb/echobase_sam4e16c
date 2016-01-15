@@ -16,11 +16,13 @@
 
 typedef enum
 {
+//	COMM_CONNECT_INITSOCKET = 0,
 	COMM_CONNECT_STATUS = 0,
 	COMM_CONNECT_OPEN,
 	COMM_CONNECT_SUSPEND,
 	COMM_CONNECT_RESUME,
 	COMM_CONNECT_CLOSE
+
 }comm_connect_state_t;
 
 typedef enum
@@ -35,7 +37,32 @@ sys_result  comm_connect(modem_socket_t * socket)
 	sys_result result;
 
 
-	// STEP 0 query socket status
+	// STEP 0 initialize socket
+	// continue loop
+	// todo: new code testing initialization of socket before connecting
+//	if(socket->state_handle.state == COMM_CONNECT_INITSOCKET) {
+//
+//		if(socket->state_handle.substate == COMM_CONNECT_INVOKE) {
+//			modem_socketconfigex(socket);
+//			socket_entersubstate(socket, COMM_CONNECT_WAITREPLY);
+//			socket_settimeout(socket, MODEM_DEFAULT_ATTIMEOUT);
+//		} else if(socket->state_handle.substate == COMM_CONNECT_WAITREPLY) {
+//
+//			result = modem_config_handler();
+//
+//			if(socket_timeout(socket)) {
+//				printf("comm(%d) socket init socket timeout.\r\n", socket->socket_id);
+//				socket_enterstate(socket, COMM_CONNECT_STATUS);
+//			}
+//
+//			if(result == SYS_AT_OK) {
+//				socket_enterstate(socket, COMM_CONNECT_STATUS);
+//			}
+//		}
+//	}
+
+
+	// STEP 1 query socket status
 	// continue loop
 	if(socket->state_handle.state == COMM_CONNECT_STATUS) {
 
@@ -362,4 +389,5 @@ sys_result  comm_connect(modem_socket_t * socket)
 //
 //
 //}
+
 

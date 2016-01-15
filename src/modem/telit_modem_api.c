@@ -75,7 +75,7 @@ void modem_socketconfigex(modem_socket_t *socket)
 
 	sprintf(scratch_buffer, MODEM_CMD_SOCKETCFGEX, socket->cnx_id, socket->ctx_id, socket->pkt_size, socket->glb_timeout, socket->cnx_timeout, socket->tx_timeout);
 	SEND_AT(scratch_buffer);
-	printf(scratch_buffer);
+//	printf("%s\r\n", scratch_buffer);
 
 }
 
@@ -449,6 +449,7 @@ uint8_t modem_handle_socketstatus(modem_socket_t *socket)
 	// build the token we're looking for #SS:1 or #SS:2
 	memset(scratch_buffer, '\0', SCRATCH_BUFFER_LEN);
 	sprintf(scratch_buffer, MODEM_TOKEN_SOCKETSTATUS_ID, socket->cnx_id);
+
 
 	char * ptr = NULL;
 	sys_result sys_status;

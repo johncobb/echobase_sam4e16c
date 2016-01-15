@@ -31,7 +31,7 @@ static volatile bool wait_ack = false;
 static void print_handler_task(void *pvParameters);
 static void task_handler(void);
 static sys_result socket_handler_cb(uint8_t *data, uint32_t len);
-static sys_result socket_empty_cb(uint8_t *data, uint32_t len);
+static sys_result socket_receive_cb(uint8_t *data, uint32_t len);
 static sys_result parse_result(char * buffer, char * token, char ** ptr_out);
 
 static uint8_t printer_send_buffer[128] = {0};
@@ -62,8 +62,9 @@ static void print_handler_task(void *pvParameters)
 }
 
 // this function does nothing but keep the compiler happy
-static sys_result socket_empty_cb(uint8_t *data, uint32_t len)
+static sys_result socket_receive_cb(uint8_t *data, uint32_t len)
 {
+	printf("socket_receive_cb: bytes=%d\r\n", len);
 	return SYS_OK;
 }
 
@@ -84,14 +85,17 @@ static sys_result socket_handler_cb(uint8_t *data, uint32_t len)
 	return result;
 }
 
+static uint8_t connection_retries = 0;
 
 void task_handler(void)
 {
 	BaseType_t result;
 
+	uint8_t * ip_endpoint = "google.com";
 //	uint8_t * ip_endpoint = "appserver02.cphandheld.com";
 
-	uint8_t * ip_endpoint = "96.27.198.215";
+//	uint8_t * ip_endpoint = "96.27.198.215";
+
 
 	socket_connection_t sck_connection;
 
@@ -104,18 +108,18 @@ void task_handler(void)
 	}
 
 
+	printf("start print task.\r\n");
+
+	// create a new socket connection
+	socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
+	printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
+
 	while(true) {
 
 		if(start_task) {
 
-			start_task = false;
+//			start_task = false;
 
-			printf("start print task.\r\n");
-
-			// create a new socket connection
-			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
-
-			printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
 
 			// establish a connection
 			printf("cph_tcp_connect\r\n");
@@ -128,9 +132,14 @@ void task_handler(void)
 				while(true) {
 
 
-					result = cph_tcp_send(&sck_connection, "abcdefghijklmnopqrstuvwxyz0123456789\r", socket_handler_cb);
+					result = cph_tcp_send(&sck_connection, "GET / HTTP/1.1\r\nHost: www.google.com\r\nConnection: keep-alive\r\n\r\n", socket_handler_cb);
 
 					printf("cph_tcp_send result: %d\r\n", result);
+
+//					while(true) {
+//						vTaskDelay(1000);
+//						printf("waiting for data...\r\n");
+//					}
 
 					uint8_t data[1024] = {0};
 
@@ -139,7 +148,7 @@ void task_handler(void)
 						memset(data, '\0', 1024);
 						// call cph_tcp_receive passing in the socket_emtpy_cb
 						// we will be handling the data received synchronously
-						result = cph_tcp_receive(&sck_connection, data, socket_empty_cb);
+						result = cph_tcp_receive(&sck_connection, data, socket_receive_cb);
 
 						if(result == SYS_TCP_OK) {
 							printf("%s\r\n", data);
@@ -152,6 +161,11 @@ void task_handler(void)
 					}
 
 				}
+
+			} else {
+				connection_retries++;
+				printf("retrying connection...%d\r\n", connection_retries);
+				vTaskDelay(1000);
 
 			}
 

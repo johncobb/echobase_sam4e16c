@@ -205,6 +205,7 @@ tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_func_
 	// this is a synchronous call so we don't want to
 	// execute the callback handle_data
 //	cnx->socket->handle_data = NULL;
+	cnx->socket->handle_data = handler;
 
 
 	if(xQueueSendToBack( xCommQueueRequest, &request, (TickType_t)0) == pdTRUE) {

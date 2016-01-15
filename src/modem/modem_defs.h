@@ -73,6 +73,7 @@ uint8_t scratch_buffer[SCRATCH_BUFFER_LEN];
 // TODO: tunable parameter must change based on S12: MODEM_CMD_SETGUARDTIME
 #define MODEM_DEFUALT_ESCAPEGUARD_TIMEOUT		50
 
+#define MODEM_DEFAULT_ATTIMEOUT			1000
 
 // *** modem tokens ***
 #define MODEM_TOKEN_OK				"OK"

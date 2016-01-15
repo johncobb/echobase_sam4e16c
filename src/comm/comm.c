@@ -74,6 +74,7 @@ void create_comm_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_pr
 	vSemaphoreCreateBinary(comm_signal);
 	vSemaphoreCreateBinary(tcp_connect_signal);
 	vSemaphoreCreateBinary(tcp_send_signal);
+	vSemaphoreCreateBinary(tcp_receive_signal);
 	vSemaphoreCreateBinary(tcp_suspend_signal);
 	vSemaphoreCreateBinary(tcp_close_signal);
 
@@ -136,7 +137,7 @@ uint8_t socket_index = 0;
 static BaseType_t result;
 
 uint8_t comm_buffer[COMM_BUFFER_LEN+1] = {0};
-
+comm_task_t task_mgr;
 
 static bool modem_ready = false;
 
@@ -144,32 +145,12 @@ static void request_queue(void);
 static void response_queue(void);
 static void next_socket(void);
 
-
-comm_task_t task_mgr;
-
-
 //unit testing scenarios:
 //unit_test_commidle();
 //UNIT_TEST_YIELD;
 
 static void next_socket(void)
 {
-	// TODO: temporary code
-	if(socket_index == 0) {
-		socket_index = 1;
-		_socket = &(modem_sockets[socket_index]);
-		return;
-	}
-
-	if(socket_index == 1) {
-		socket_index = 0;
-		_socket = &(modem_sockets[socket_index]);
-		return;
-	}
-	// TODO: end temporary code
-
-
-
 	// sanity check
 	if(++socket_index == (SOCKET_POOL_LEN-1))
 		socket_index = 0;
@@ -177,15 +158,12 @@ static void next_socket(void)
 	_socket = &(modem_sockets[socket_index]);
 }
 
-static volatile bool _nextsocket = false;
-static volatile bool _waitsuspend = false;
 
 static void comm_handler_task(void *pvParameters)
 {
 
+	// get a reference to the socket we'll be working with
 	_socket = &(modem_sockets[socket_index]);
-
-//	_socket = &(modem_sockets[1]);
 
 	task_mgr = NULL;
 
@@ -219,70 +197,41 @@ static void comm_handler_task(void *pvParameters)
 			vTaskDelay(1000);
 		}
 
-		if(comm_state == COMM_RECEIVE) {
-			if(_socket->task_handler != NULL) {
-				// copy received data to socket(n) buffer
-//				modem_copy_buffer(_socket->rx_buffer);
-				_socket->bytes_received = modem_copy_buffer(_socket->rx_buffer);
-				_socket->task_handler(_socket);
-			} else {
-				printf("task_handler is NULL\r\n");
-			}
-		}
-
-
 		if(comm_state == COMM_IDLE || comm_state == COMM_CONNECT || comm_state == COMM_SEND || comm_state == COMM_RECEIVE || comm_state == COMM_SUSPEND || comm_state == COMM_CLOSE) {
 
-
-
-//			if(comm_state == COMM_CONNECT) {
-//				memset(_socket->endpoint, '\0', SOCKET_IPENDPOINT_LEN+1);
-//				memcpy(_socket->endpoint, MODEM_SOCKET_IPENDPOINT, SOCKET_IPENDPOINT_LEN);
-//			}
-
 			//TODO: NEW VERSION
-			// comm_idle, comm_connect, comm_send, comm_suspend
+			// comm_idle, comm_connect, comm_send, comm_receive, comm_suspend
 			if(_socket->task_handler != NULL) {
 				// copy received data to socket(n) buffer
-//				modem_copy_buffer(_socket->rx_buffer);
 				_socket->bytes_received = modem_copy_buffer(_socket->rx_buffer);
+				// execute the socket's task_handler
 				_socket->task_handler(_socket);
 			} else {
 				printf("task_handler is NULL\r\n");
 			}
 
-//			next_socket();
+#ifdef SOCKET_ROUNDROBIN
+			// move to next socket
+			next_socket();
+#endif
+
 		}
-
-//		if(comm_state == COMM_IDLE) {
-//
-//			if(socket_index == 0)
-//				socket_index = 1;
-//			else if(socket_index == 1)
-//				socket_index = 0;
-//
-//			_socket = &(modem_sockets[socket_index]);
-//		}
-
 
 		if(comm_ready) {
+			// handle comm response queue
 			response_queue();
+			// handle comm request queue
 			request_queue();
 		}
-
-		vTaskDelay(100);
 
 
 		UNIT_TEST_YIELD;
 
-
 		vTaskDelay(100);
-		//printf("comm_handler_task loop\r\n");
+
 	}
 
 }
-
-
 
 
 static void request_queue(void)
@@ -290,16 +239,12 @@ static void request_queue(void)
 //	BaseType_t result;
 	comm_request_t request;
 
-
 	result = xQueueReceive(xCommQueueRequest, &request, QUEUE_TICKS);
 
 	if(result == pdTRUE) {
 
+		// dispatch new comm requests
 		if(request.type == REQUEST_CONNECT) {
-
-			//printf("request_queue: endpoint: %s\r\n", request.endpoint);
-
-//			memcpy(_socket->endpoint, request.endpoint, SOCKET_IPENDPOINT_LEN);
 			comm_enterstate(_socket, COMM_CONNECT);
 		}
 
@@ -318,7 +263,6 @@ static void request_queue(void)
 		if(request.type == REQUEST_CLOSE) {
 			comm_enterstate(_socket, COMM_CLOSE);
 		}
-
 
 	}
 }
