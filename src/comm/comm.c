@@ -42,15 +42,17 @@ uint32_t bytes_received = 0;
 
 volatile bool comm_ready = false;
 
+sys_result dummy_onreceive(uint8_t *data, uint32_t len);
+
 modem_socket_t modem_sockets[] =
 {
 		// socket_id, cnx_id, ctx_id, pkt_size, glb_timeout, cnx_timeout (tenths of second), tx_timeout (tenths of second)
 		// socket_status, endpoint
 		// protocol, address, port
 		// function_handler, data_buffer, bytes_received
-		{0, 1, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1888}, {0}, {0}, {0}, http_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
+		{0, 1, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1888}, {0}, {0}, {0}, tcp_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
 //		{0, 1, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1889}, {0}, {0}, http_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
-		{1, 2, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1889}, {0}, {0}, {0}, http_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
+		{1, 2, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1889}, {0}, {0}, {0}, tcp_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
 		{0, 0, 0, 0, 0}
 };
 
@@ -93,8 +95,6 @@ void create_comm_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_pr
 
 void comm_enterstate(modem_socket_t *socket, comm_state_t state)
 {
-
-
 	comm_state = state;
 
 	// we can set a state while passing in a null socket
@@ -219,7 +219,7 @@ static void comm_handler_task(void *pvParameters)
 
 		if(comm_ready) {
 			// handle comm response queue
-			response_queue();
+//			response_queue();
 			// handle comm request queue
 			request_queue();
 		}

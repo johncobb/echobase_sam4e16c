@@ -25,6 +25,10 @@ xSemaphoreHandle tcp_receive_signal = 0;
 xSemaphoreHandle tcp_suspend_signal = 0;
 xSemaphoreHandle tcp_close_signal = 0;
 
+uint16_t cph_tcp_bufferindex = 0;
+uint16_t cph_tcp_bufferlen = 0;
+uint8_t cph_tcp_buffer[DEFAULT_TCP_BUFFERSIZE] = {0};
+
 
 socket_connection_t socket_connections[] = {
 		{{0}, 0, 0, 0, 0},
@@ -38,6 +42,15 @@ socket_connection_t socket_connections[] = {
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis);
 bool connection_timeout(socket_connection_t * cnx);
 
+sys_result cph_tcp_receivecb(uint8_t *data, uint32_t len)
+{
+
+	// todo: new code for handling data
+//	memcpy(cph_tcp_buffer, cph_tcp_bufferindex, cph_tcp_bufferlen);
+
+	printf("cph_tcp_receivecb: bytes=%d\r\n", len);
+	return SYS_OK;
+}
 
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis)
 {
@@ -157,7 +170,7 @@ tcp_result cph_tcp_connect(socket_connection_t *cnx)
 	return result;
 }
 
-tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_func_t handler)
+tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_onreceive_func_t handler)
 {
 	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
 	tcp_result result;
@@ -191,7 +204,7 @@ tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_func_t
 // synchronous cph_tcp_receive message
 // this function returns whatever data is received from the port
 // and copies into the data buffer passed in
-tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_func_t handler)
+tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_onreceive_func_t handler)
 {
 	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
 	tcp_result result;

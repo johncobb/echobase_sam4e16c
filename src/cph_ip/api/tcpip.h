@@ -10,6 +10,7 @@
 
 #include "socket.h"
 
+#define DEFAULT_TCP_BUFFERSIZE		256
 
 #define DEFAULT_TCIP_CONNECTTIMEOUT	20000
 #define DEFAULT_TCIP_SENDTIMEOUT	1000
@@ -23,8 +24,15 @@ typedef enum
 	SYS_ERR_TCP_TIMEOUT
 }tcp_result;
 
+uint8_t cph_tcp_buffer[DEFAULT_TCP_BUFFERSIZE];
+
 typedef tcp_result (*tcp_func_t)(uint8_t *data, uint32_t len);
 typedef void (*tcp_data_callback_func_t)(uint8_t *data, uint32_t len);
+
+
+
+sys_result cph_tcp_receivecb(uint8_t *data, uint32_t len);
+
 
 tcp_result tcp_init(tcp_func_t handle_data);
 
@@ -32,8 +40,8 @@ tcp_result tcp_input(void);
 tcp_result tcp_output(void);
 
 tcp_result cph_tcp_connect(socket_connection_t *cnx);
-tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_func_t handler);
-tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_func_t handler);
+tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_onreceive_func_t handler);
+tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_onreceive_func_t handler);
 tcp_result cph_tcp_suspend(socket_connection_t *cnx);
 tcp_result cph_tcp_resume(socket_connection_t *cnx);
 tcp_result cph_tcp_close();

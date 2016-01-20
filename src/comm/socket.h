@@ -12,6 +12,7 @@
 #include "modem.h"
 #include "comm_if.h"
 #include "http_handler.h"
+#include "tcp_handler.h"
 
 //#define SOCKET_ROUNDROBIN			1
 #define SOCKET_POOL_LEN				6
@@ -50,7 +51,12 @@ typedef enum
 
 
 
-typedef sys_result (*socket_func_t)(uint8_t *data, uint32_t len);
+//typedef sys_result (*socket_func_t)(uint8_t *data, uint32_t len);
+typedef sys_result (*socket_onreceive_func_t)(uint8_t *data, uint32_t len);
+
+typedef void (*socket_connect_func_t)(uint8_t result_id);
+typedef void (*socket_receive_func_t)(uint8_t result_id);
+typedef void (*socket_ondisconnect_func_t)(uint8_t result_id);
 
 
 typedef struct
@@ -87,7 +93,7 @@ typedef struct
 	uint8_t endpoint[SOCKET_IPENDPOINT_LEN+1];
 	uint8_t rx_buffer[SOCKET_BUFFER_LEN+1];
 	uint8_t tx_buffer[SOCKET_BUFFER_LEN];
-	socket_func_t handle_data;
+	socket_onreceive_func_t handle_data;
 	uint32_t bytes_received;
 	comm_task_t task_handler;
 	socket_state_t state_handle;
@@ -100,7 +106,7 @@ typedef struct
 {
 	uint8_t endpoint[SOCKET_IPENDPOINT_LEN+1];
 	modem_socket_t *socket;
-	socket_func_t handler;
+	socket_onreceive_func_t handler;
 	uint32_t timeout;
 	portTickType max_wait_millis;
 
