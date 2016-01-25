@@ -152,7 +152,7 @@ void app_handler(void)
 			printf("start task.\r\n");
 
 			// create a new socket connection
-			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
+//			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
 
 			printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
 
@@ -179,7 +179,7 @@ void app_handler(void)
 					// if we have a message send it
 					if(result == pdTRUE) {
 						printf("msg received.\r\n");
-						result = cph_tcp_send(&sck_connection, socket_ascii_buffer, app_data_handler);
+						result = cph_tcp_send(&sck_connection, socket_ascii_buffer);
 					}
 //					result = cph_tcp_send(&sck_connection, packet, app_data_handler);
 
@@ -306,7 +306,7 @@ void app_task_unittest(void)
 			printf("start task.\r\n");
 
 			// create a new socket connection
-			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
+//			socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
 
 			printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
 
@@ -320,7 +320,7 @@ void app_task_unittest(void)
 				// send a message once per second
 				while(true) {
 
-					result = cph_tcp_send(&sck_connection, packet, app_data_handler);
+					result = cph_tcp_send(&sck_connection, packet);
 
 					vTaskDelay(500);
 

@@ -14,7 +14,7 @@
 modem_socket_t *_socket;
 uint8_t _socket_pool_index = -1;
 
-uint8_t socket_reserve(socket_connection_t *cnx)
+uint8_t socket_reserve(socket_connection_t *cnx, socket_event_handler_t *handler)
 {
 	if(++_socket_pool_index == (SOCKET_POOL_LEN-1)) {
 		_socket_pool_index = 5;
@@ -26,7 +26,11 @@ uint8_t socket_reserve(socket_connection_t *cnx)
 	// store the socket
 	cnx->socket = &modem_sockets[_socket_pool_index];
 	// assign the data handler
-	cnx->socket->handle_data = cnx->handler;
+//	cnx->socket->handle_data = cnx->handler;
+
+	// todo: new code here
+	cnx->socket->event_handler = handler;
+
 	cnx->socket->state_handle.state = 0;
 	cnx->socket->state_handle.substate = 0;
 
@@ -42,20 +46,20 @@ uint8_t socket_free()
 	}
 
 	printf("freeing socket: (%d)\r\n", _socket_pool_index);
-	modem_sockets[_socket_pool_index].handle_data = NULL;
+//	modem_sockets[_socket_pool_index].handle_data = NULL;
+	modem_sockets[_socket_pool_index].event_handler = NULL;
 	modem_sockets[_socket_pool_index].socket_error = 0;
 
 	return _socket_pool_index;
 }
 
 
-
-void socket_newconnection(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout)
+void socket_newconnection(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout, socket_event_handler_t *handler)
 {
 	printf("socket_newconnection()\r\n");
 
 	// reserve the next socket
-	socket_reserve(cnx);
+	socket_reserve(cnx, handler);
 	// set the connection timeout
 	cnx->timeout = timeout;
 
@@ -66,6 +70,13 @@ void socket_newconnection(socket_connection_t *cnx, uint8_t *endpoint, uint32_t 
 	// copy in the endpoint address
 	memcpy(cnx->endpoint, endpoint, SOCKET_IPENDPOINT_LEN);
 	memcpy(cnx->socket->endpoint, endpoint, SOCKET_IPENDPOINT_LEN);
+
+}
+
+uint32_t socket_readbytes(socket_connection_t *cnx)
+{
+	uint32_t bytes_received = modem_copy_buffer(cnx->socket->rx_buffer);
+	return bytes_received;
 }
 
 void socket_settimeout(modem_socket_t * socket, uint32_t millis)

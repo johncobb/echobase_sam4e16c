@@ -30,6 +30,9 @@ uint16_t cph_tcp_bufferlen = 0;
 uint8_t cph_tcp_buffer[DEFAULT_TCP_BUFFERSIZE] = {0};
 
 
+bool tcp_isconnected = false;
+
+
 socket_connection_t socket_connections[] = {
 		{{0}, 0, 0, 0, 0},
 		{{0}, 0, 0, 0, 0},
@@ -41,6 +44,45 @@ socket_connection_t socket_connections[] = {
 
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis);
 bool connection_timeout(socket_connection_t * cnx);
+
+
+
+void cph_tcp_onconnect(void)
+{
+	tcp_event_handler.on_connect();
+//	printf("cph_tcp_onconnect\r\n");
+	tcp_isconnected = true;
+}
+
+void cph_tcp_ondisconnect(void)
+{
+	tcp_event_handler.on_disconnect();
+//	printf("cph_tcp_ondisconnect\r\n");
+	tcp_isconnected = false;
+}
+
+void cph_tcp_ondatareceive(uint8_t *data, uint32_t len)
+{
+	tcp_event_handler.on_datareceive(data, len);
+//	printf("cph_tcp_ondatareceive: bytes=%d data=%s\r\n", len, data);
+}
+
+static socket_event_handler_t tcp_socketevent_handler = {cph_tcp_onconnect, cph_tcp_ondisconnect, cph_tcp_ondatareceive};
+
+
+void cph_tcp_init(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout)
+{
+	socket_newconnection(cnx, endpoint, timeout, &tcp_socketevent_handler);
+}
+
+void cph_tcp_set_dataeventhandler(tcp_event_handler_t *handler)
+{
+
+}
+
+
+
+
 
 sys_result cph_tcp_receivecb(uint8_t *data, uint32_t len)
 {
@@ -73,8 +115,6 @@ bool connection_timeout(socket_connection_t * cnx)
 
 	return timeout;
 }
-
-
 
 
 void new_connection(comm_request_t *request, uint8_t *endpoint);
@@ -170,7 +210,7 @@ tcp_result cph_tcp_connect(socket_connection_t *cnx)
 	return result;
 }
 
-tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_onreceive_func_t handler)
+tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet)
 {
 	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
 	tcp_result result;
@@ -181,11 +221,8 @@ tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_onrece
 
 	connection_settimeout(cnx, DEFAULT_TCIP_SENDTIMEOUT);
 
-	cnx->socket->handle_data = handler;
 	// copy the data packet into the socket's tx_buffer
 	memcpy(cnx->socket->tx_buffer, packet, SOCKET_BUFFER_LEN);
-
-
 
 	if(xQueueSendToBack( xCommQueueRequest, &request, (TickType_t)0) == pdTRUE) {
 		result = SYS_TCP_OK;
@@ -204,7 +241,7 @@ tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet, socket_onrece
 // synchronous cph_tcp_receive message
 // this function returns whatever data is received from the port
 // and copies into the data buffer passed in
-tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_onreceive_func_t handler)
+tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data)
 {
 	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
 	tcp_result result;
@@ -214,12 +251,6 @@ tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_onrec
 	request.type = REQUEST_RECEIVE;
 
 	connection_settimeout(cnx, DEFAULT_TCIP_RECEIVETIMEOUT);
-
-	// this is a synchronous call so we don't want to
-	// execute the callback handle_data
-//	cnx->socket->handle_data = NULL;
-	cnx->socket->handle_data = handler;
-
 
 	if(xQueueSendToBack( xCommQueueRequest, &request, (TickType_t)0) == pdTRUE) {
 		result = SYS_TCP_OK;
@@ -239,6 +270,18 @@ tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data, socket_onrec
 	return result;
 
 }
+
+
+// synchronous cph_tcp_receive message
+// this function returns whatever data is received from the port
+// and copies into the data buffer passed in
+tcp_result cph_tcp_receive_synch(socket_connection_t *cnx)
+{
+	cnx->socket->bytes_received = socket_readbytes(cnx);
+
+	return SYS_TCP_OK;
+}
+
 
 
 tcp_result cph_tcp_suspend(socket_connection_t *cnx)

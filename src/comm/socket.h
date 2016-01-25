@@ -52,11 +52,20 @@ typedef enum
 
 
 //typedef sys_result (*socket_func_t)(uint8_t *data, uint32_t len);
-typedef sys_result (*socket_onreceive_func_t)(uint8_t *data, uint32_t len);
 
-typedef void (*socket_connect_func_t)(uint8_t result_id);
-typedef void (*socket_receive_func_t)(uint8_t result_id);
-typedef void (*socket_ondisconnect_func_t)(uint8_t result_id);
+typedef void (*socket_connect_func_t)(void);
+typedef void (*socket_ondisconnect_func_t)(void);
+typedef void (*socket_onreceive_func_t)(uint8_t *data, uint32_t len);
+
+
+typedef struct
+{
+	socket_connect_func_t on_connect;
+	socket_ondisconnect_func_t on_disconnect;
+	socket_onreceive_func_t on_datareceive;
+
+}socket_event_handler_t;
+
 
 
 typedef struct
@@ -66,6 +75,9 @@ typedef struct
 	uint16_t port;
 
 }modem_socket_conf_t;
+
+
+
 
 
 typedef sys_result (*comm_task_t)(void *);
@@ -93,12 +105,13 @@ typedef struct
 	uint8_t endpoint[SOCKET_IPENDPOINT_LEN+1];
 	uint8_t rx_buffer[SOCKET_BUFFER_LEN+1];
 	uint8_t tx_buffer[SOCKET_BUFFER_LEN];
-	socket_onreceive_func_t handle_data;
+//	socket_onreceive_func_t handle_data;
 	uint32_t bytes_received;
-	comm_task_t task_handler;
+	comm_task_t task_handler; // handles current com task (comm_send, comm_receive, etc.)
 	socket_state_t state_handle;
 	socket_status_t socket_status;
 	socket_error_t	socket_error;
+	socket_event_handler_t *event_handler;
 
 }modem_socket_t;
 
@@ -110,7 +123,6 @@ typedef struct
 	uint32_t timeout;
 	portTickType max_wait_millis;
 
-
 } socket_connection_t;
 
 extern modem_socket_t *_socket;
@@ -118,10 +130,11 @@ extern modem_socket_t modem_sockets[];
 
 extern uint8_t _socket_pool_index;
 
-uint8_t socket_reserve(socket_connection_t *cnx);
-uint8_t socket_free();
-void socket_newconnection(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout);
+uint8_t socket_reserve(socket_connection_t *cnx, socket_event_handler_t *handler);
 
+uint8_t socket_free();
+void socket_newconnection(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout, socket_event_handler_t *handler);
+uint32_t socket_readbytes(socket_connection_t *cnx);
 
 
 

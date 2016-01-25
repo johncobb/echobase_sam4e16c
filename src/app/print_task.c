@@ -25,6 +25,9 @@
 
 QueueHandle_t xPrintQueue;
 
+static uint32_t t_now = 0;
+static uint32_t t_heartbeat_timeout = 0;
+
 static volatile bool start_task = false;
 static volatile bool wait_ack = false;
 
@@ -61,39 +64,39 @@ static void print_handler_task(void *pvParameters)
 	task_handler();
 }
 
-// this function does nothing but keep the compiler happy
-static sys_result socket_onreceive_callback(uint8_t *data, uint32_t len)
+
+static void app_tcp_onconnect(void)
 {
-	printf("socket_receive_cb: bytes=%d\r\n", len);
-	return SYS_OK;
+	printf("app_tcp_onconnect\r\n");
 }
 
-static sys_result socket_handler_cb(uint8_t *data, uint32_t len)
+static void app_tcp_ondisconnect(void)
 {
-	sys_result result;
-	printf("app_data_handler: %s\r\n", data);
-
-	if(wait_ack) {
-		char * ptr = NULL;
-		result = parse_result(data, "ACK", &ptr);
-
-		if(result == SYS_OK) {
-			printf("ack found!\r\n");
-		}
-	}
-
-	return result;
+	printf("app_tcp_ondisconnect\r\n");
 }
+
+static void app_tcp_ondatareceive(uint8_t *data, uint32_t len)
+{
+	printf("app_tcp_ondatareceive: bytes=%d data=%s\r\n", len, data);
+}
+
+tcp_event_handler_t tcp_event_handler = {app_tcp_onconnect, app_tcp_ondisconnect, app_tcp_ondatareceive};
+
+
+
 
 static uint8_t connection_retries = 0;
 
 void task_handler(void)
 {
+	t_now = cph_get_millis();
+
 	BaseType_t result;
 
 	uint8_t * ip_endpoint = "google.com";
-//	uint8_t * ip_endpoint = "appserver02.cphandheld.com";
 
+	// todo: some other fun ips to hit
+//	uint8_t * ip_endpoint = "appserver02.cphandheld.com";
 //	uint8_t * ip_endpoint = "96.27.198.215";
 
 
@@ -107,19 +110,20 @@ void task_handler(void)
 		vTaskDelay(100);
 	}
 
+	printf("starting print task.\r\n");
 
-	printf("start print task.\r\n");
 
-	// create a new socket connection
-	socket_newconnection(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
-	printf("sck0: %s:%d\r\n", sck_connection.socket->endpoint, sck_connection.socket->socket_conf.port);
+	cph_tcp_init(&sck_connection, ip_endpoint, DEFAULT_TCIP_CONNECTTIMEOUT);
+
+	printf("socket[%d]: ip_endpoint: %s port: %d\r\n", _socket_pool_index, ip_endpoint, sck_connection.socket->socket_conf.port);
+
+
 
 	while(true) {
 
 		if(start_task) {
 
 //			start_task = false;
-
 
 			// establish a connection
 			printf("cph_tcp_connect\r\n");
@@ -132,29 +136,30 @@ void task_handler(void)
 				while(true) {
 
 
-					result = cph_tcp_send(&sck_connection, "GET / HTTP/1.1\r\nHost: www.google.com\r\nConnection: keep-alive\r\n\r\n", socket_onreceive_callback);
+					// todo: starting of hb code
+//					if((t_now - t_heartbeat_timeout) > 5000) {
+//						t_heartbeat_timeout = t_now;
+
+
+					result = cph_tcp_send(&sck_connection, "GET / HTTP/1.1\r\nHost: www.google.com\r\nConnection: keep-alive\r\n\r\n");
+
 
 					printf("cph_tcp_send result: %d\r\n", result);
-
-//					while(true) {
-//						vTaskDelay(1000);
-//						printf("waiting for data...\r\n");
-//					}
 
 					uint8_t data[1024] = {0};
 
 
 					while(true) {
 						memset(data, '\0', 1024);
-						// call cph_tcp_receive passing in the socket_emtpy_cb
-						// we will be handling the data received synchronously
-						result = cph_tcp_receive(&sck_connection, data, socket_onreceive_callback);
 
-						// todo: new code for handling data
-//						result = cph_tcp_receive(&sck_connection, data, cph_tcp_receivecb);
+						// call tcp receive so we can process data
+						result = cph_tcp_receive(&sck_connection, data);
+
 
 						if(result == SYS_TCP_OK) {
-							printf("%s\r\n", data);
+							if(sck_connection.socket->bytes_received > 0) {
+								printf("synch: %s\r\n", data);
+							}
 						} else {
 							printf("cph_tcp_receive: error(%d)", result);
 						}
@@ -177,21 +182,44 @@ void task_handler(void)
 }
 
 
-static sys_result parse_result(char * buffer, char * token, char ** ptr_out)
-{
-	sys_result result;
-
-	char * ptr = NULL;
-
-	if((ptr = strstr(buffer, token))) {
-		if(ptr_out != NULL) {
-			*ptr_out = ptr;
-		}
-		//printf("SYS_AT_OK\r\n");
-		result = SYS_OK;
-	} else {
-		result = SYS_NOTFOUND;
-	}
-
-	return result;
-}
+//static sys_result socket_onreceive_callback(uint8_t *data, uint32_t len)
+//{
+//	printf("socket_receive_cb: bytes=%d data=%s\r\n", len, data);
+//	return SYS_OK;
+//}
+//
+//static sys_result socket_handler_cb(uint8_t *data, uint32_t len)
+//{
+//	sys_result result;
+//	printf("app_data_handler: %s\r\n", data);
+//
+//	if(wait_ack) {
+//		char * ptr = NULL;
+//		result = parse_result(data, "ACK", &ptr);
+//
+//		if(result == SYS_OK) {
+//			printf("ack found!\r\n");
+//		}
+//	}
+//
+//	return result;
+//}
+//
+//static sys_result parse_result(char * buffer, char * token, char ** ptr_out)
+//{
+//	sys_result result;
+//
+//	char * ptr = NULL;
+//
+//	if((ptr = strstr(buffer, token))) {
+//		if(ptr_out != NULL) {
+//			*ptr_out = ptr;
+//		}
+//		//printf("SYS_AT_OK\r\n");
+//		result = SYS_OK;
+//	} else {
+//		result = SYS_NOTFOUND;
+//	}
+//
+//	return result;
+//}

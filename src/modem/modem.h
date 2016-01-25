@@ -63,6 +63,8 @@ typedef struct {
 } dialer_cmd_t;
 
 
+extern uint32_t bytes_received;
+
 uint32_t modem_handler_async(uint32_t millis);
 sys_result modem_config_handler(void);
 void reset_rx_buffer(void);

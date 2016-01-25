@@ -133,6 +133,8 @@ sys_result  comm_connect(modem_socket_t * socket)
 
 			if(result == SYS_AT_OK) {
 				// socket is open
+				socket->event_handler->on_connect();
+
 				socket->socket_status = SCK_OPENED;
 				comm_enterstate(socket, COMM_IDLE);
 				socket_exitstate(socket);
@@ -171,6 +173,9 @@ sys_result  comm_connect(modem_socket_t * socket)
 			result = modem_handle_socketopen(socket);
 
 			if(result == SYS_AT_OK) {
+				// socket is open
+
+				socket->event_handler->on_connect();
 				socket->socket_status = SCK_OPENED;
 //				comm_enterstate(socket, COMM_IDLE);
 

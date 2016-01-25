@@ -50,9 +50,9 @@ modem_socket_t modem_sockets[] =
 		// socket_status, endpoint
 		// protocol, address, port
 		// function_handler, data_buffer, bytes_received
-		{0, 1, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1888}, {0}, {0}, {0}, tcp_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
+		{0, 1, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1888}, {0}, {0}, {0},  0, comm_idle, {0,0,0,0}, 0, 0},
 //		{0, 1, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1889}, {0}, {0}, http_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
-		{1, 2, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1889}, {0}, {0}, {0}, tcp_handle_data, 0, comm_idle, {0,0,0,0}, 0, 0},
+		{1, 2, 1, 512, 90, 600, 2, 0, {SOCKET_TCP, SOCKET_PROT_HTTP, 1889}, {0}, {0}, {0},  0, comm_idle, {0,0,0,0}, 0, 0},
 		{0, 0, 0, 0, 0}
 };
 
@@ -199,12 +199,14 @@ static void comm_handler_task(void *pvParameters)
 
 		if(comm_state == COMM_IDLE || comm_state == COMM_CONNECT || comm_state == COMM_SEND || comm_state == COMM_RECEIVE || comm_state == COMM_SUSPEND || comm_state == COMM_CLOSE) {
 
-			//TODO: NEW VERSION
 			// comm_idle, comm_connect, comm_send, comm_receive, comm_suspend
+			// sanity check task_handler should never be null
 			if(_socket->task_handler != NULL) {
 				// copy received data to socket(n) buffer
 				_socket->bytes_received = modem_copy_buffer(_socket->rx_buffer);
+
 				// execute the socket's task_handler
+				// the task will also handle any bubbling up of data to the datareceived callback
 				_socket->task_handler(_socket);
 			} else {
 				printf("task_handler is NULL\r\n");
