@@ -177,13 +177,16 @@ sys_result  comm_connect(modem_socket_t * socket)
 
 				socket->event_handler->on_connect();
 				socket->socket_status = SCK_OPENED;
-//				comm_enterstate(socket, COMM_IDLE);
 
-//				comm_enterstate(socket, COMM_SUSPEND);
-//				socket_exitstate(socket);
-
+				// todo: dispatch to comm_idle instead of suspend
+				// really doesn't make since to send to suspend
+				// right after a connection is made
 				socket_entersubstate(socket, COMM_CONNECT_SUSPEND);
 				socket_settimeout(socket, DEFAULT_COMM_SOCKETSUSPEND_TIMEOUT);
+
+
+//				comm_enterstate(socket, COMM_IDLE);
+//				socket_exitstate(socket);
 
 				// TODO: review options for state transition after connect
 				xSemaphoreGive(tcp_connect_signal);

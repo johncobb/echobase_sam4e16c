@@ -7,17 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
-
 #include "socket.h"
 #include "comm.h"
 #include "tcpip.h"
-
-
-
 
 xSemaphoreHandle tcp_connect_signal = 0;
 xSemaphoreHandle tcp_send_signal = 0;
@@ -29,22 +24,11 @@ uint16_t cph_tcp_bufferindex = 0;
 uint16_t cph_tcp_bufferlen = 0;
 uint8_t cph_tcp_buffer[DEFAULT_TCP_BUFFERSIZE] = {0};
 
-
 bool tcp_isconnected = false;
 
-
-socket_connection_t socket_connections[] = {
-		{{0}, 0, 0, 0, 0},
-		{{0}, 0, 0, 0, 0},
-		{{0}, 0, 0, 0, 0},
-		{{0}, 0, 0, 0, 0},
-		{{0}, 0, 0, 0, 0},
-		{{0}, 0, 0, 0, 0}
-};
-
+void cph_tcp_newrequest(socket_connection_t *cnx, comm_request_t *request);
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis);
 bool connection_timeout(socket_connection_t * cnx);
-
 
 
 void cph_tcp_onconnect(void)
@@ -69,29 +53,9 @@ void cph_tcp_ondatareceive(uint8_t *data, uint32_t len)
 
 static socket_event_handler_t tcp_socketevent_handler = {cph_tcp_onconnect, cph_tcp_ondisconnect, cph_tcp_ondatareceive};
 
-
 void cph_tcp_init(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout)
 {
 	socket_newconnection(cnx, endpoint, timeout, &tcp_socketevent_handler);
-}
-
-void cph_tcp_set_dataeventhandler(tcp_event_handler_t *handler)
-{
-
-}
-
-
-
-
-
-sys_result cph_tcp_receivecb(uint8_t *data, uint32_t len)
-{
-
-	// todo: new code for handling data
-//	memcpy(cph_tcp_buffer, cph_tcp_bufferindex, cph_tcp_bufferlen);
-
-	printf("cph_tcp_receivecb: bytes=%d\r\n", len);
-	return SYS_OK;
 }
 
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis)
@@ -116,58 +80,21 @@ bool connection_timeout(socket_connection_t * cnx)
 	return timeout;
 }
 
-
-void new_connection(comm_request_t *request, uint8_t *endpoint);
-
-
-void new_connection(comm_request_t *request, uint8_t *endpoint)
-{
-	printf("new_connection()\r\n");
-	// sanity check, fill buffer with null terminated strings
-	memset(request->endpoint, '\0', SOCKET_IPENDPOINT_LEN+1);
-
-//	request->socket_address = 0;
-	request->type = REQUEST_CONNECT;
-//	request->timeout = DEFAULT_TCIP_CONNECTTIMEOUT;
-
-	// copy in the endpoint address
-	memcpy(request->endpoint, endpoint, SOCKET_IPENDPOINT_LEN);
-
-}
-
-void cph_tcp_onconnect_error()
-{
-
-}
-
-void cph_tcp_newrequest(socket_connection_t *cnx, comm_request_t *request);
-
 void cph_tcp_newrequest(socket_connection_t *cnx, comm_request_t *request)
 {
-
 	memset(request->endpoint, '\0', SOCKET_IPENDPOINT_LEN+1);
 	memcpy(request->endpoint, cnx->endpoint, SOCKET_IPENDPOINT_LEN);
 	request->type = REQUEST_CONNECT;
-
 }
-
-
 
 tcp_result cph_tcp_connect(socket_connection_t *cnx)
 {
 	// TODO: SEMAPHORE TAKE GIVE TASK NOTIFY
 	tcp_result result;
-
 	comm_request_t request;
 
-	// create a new tcp request for comm
 	printf("cph_tcp_newrequest.\r\n");
 	cph_tcp_newrequest(cnx, &request);
-
-//	socket_reserve(cnx);
-
-
-//	new_connection(&request, SOCKET_IPENDPOINT);
 
 	// setup our default connection timeout
 	printf("connection_settimeout\r\n");
@@ -182,8 +109,6 @@ tcp_result cph_tcp_connect(socket_connection_t *cnx)
 				printf("socket connection timeout.\r\n");
 				break;
 			}
-
-//			printf("sck err: %d stat: %d\r\n", cnx->socket->socket_error, cnx->socket->socket_status);
 
 			if(cnx->socket->socket_error > 0) {
 				printf("sck err: %d stat: %d\r\n", cnx->socket->socket_error, cnx->socket->socket_status);
@@ -235,7 +160,6 @@ tcp_result cph_tcp_send(socket_connection_t *cnx, uint8_t *packet)
 	}
 
 	return result;
-
 }
 
 // synchronous cph_tcp_receive message
@@ -268,21 +192,7 @@ tcp_result cph_tcp_receive(socket_connection_t *cnx, uint8_t *data)
 	}
 
 	return result;
-
 }
-
-
-// synchronous cph_tcp_receive message
-// this function returns whatever data is received from the port
-// and copies into the data buffer passed in
-tcp_result cph_tcp_receive_synch(socket_connection_t *cnx)
-{
-	cnx->socket->bytes_received = socket_readbytes(cnx);
-
-	return SYS_TCP_OK;
-}
-
-
 
 tcp_result cph_tcp_suspend(socket_connection_t *cnx)
 {
@@ -312,10 +222,8 @@ tcp_result cph_tcp_suspend(socket_connection_t *cnx)
 		//printf("tcp_connect: connected.\r\n");
 	}
 
-
-//	socket_free();
+	socket_free();
 	return result;
-
 }
 
 tcp_result cph_tcp_resume(socket_connection_t *cnx)
@@ -346,10 +254,7 @@ tcp_result cph_tcp_resume(socket_connection_t *cnx)
 		//printf("tcp_connect: connected.\r\n");
 	}
 
-
-//	socket_free();
 	return SYS_TCP_OK;
-
 }
 
 tcp_result cph_tcp_close()
@@ -373,8 +278,5 @@ tcp_result cph_tcp_close()
 
 	socket_free();
 	return SYS_TCP_OK;
-
 }
-
-
 

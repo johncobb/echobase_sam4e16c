@@ -33,7 +33,6 @@ QueueHandle_t xCommQueueRequest;
 static uint8_t out_buffer[COMM_BUFFER_LEN+1];
 
 comm_state_t comm_state = COMM_INIT;
-
 comm_network_state_t comm_network_state = {0,0};
 
 static volatile uint8_t comm_dispatch_sig = 0;
@@ -42,7 +41,7 @@ uint32_t bytes_received = 0;
 
 volatile bool comm_ready = false;
 
-sys_result dummy_onreceive(uint8_t *data, uint32_t len);
+void handle_modem_events(void);
 
 modem_socket_t modem_sockets[] =
 {
@@ -108,21 +107,39 @@ void comm_enterstate(modem_socket_t *socket, comm_state_t state)
 
 	switch(state) {
 		case COMM_IDLE:
+#ifdef LOG_COMMSTATECHANGE
+			printf("comm_enterstate: comm_idle\r\n");
+#endif
 			socket->task_handler = comm_idle;
 			break;
 		case COMM_CONNECT:
+#ifdef LOG_COMMSTATECHANGE
+			printf("comm_enterstate: comm_connect\r\n");
+#endif
 			socket->task_handler = comm_connect;
 			break;
 		case COMM_SEND:
+#ifdef LOG_COMMSTATECHANGE
+			printf("comm_enterstate: comm_send\r\n");
+#endif
 			socket->task_handler = comm_send;
 			break;
 		case COMM_RECEIVE:
+#ifdef LOG_COMMSTATECHANGE
+			printf("comm_enterstate: comm_receive\r\n");
+#endif
 			socket->task_handler = comm_receive;
 			break;
 		case COMM_SUSPEND:
+#ifdef LOG_COMMSTATECHANGE
+			printf("comm_enterstate: comm_suspend\r\n");
+#endif
 			socket->task_handler = comm_suspend;
 			break;
 		case COMM_CLOSE:
+#ifdef LOG_COMMSTATECHANGE
+			printf("comm_enterstate: comm_close\r\n");
+#endif
 			socket->task_handler = comm_close;
 			break;
 	}
@@ -145,10 +162,6 @@ static void request_queue(void);
 static void response_queue(void);
 static void next_socket(void);
 
-//unit testing scenarios:
-//unit_test_commidle();
-//UNIT_TEST_YIELD;
-
 static void next_socket(void)
 {
 	// sanity check
@@ -157,7 +170,6 @@ static void next_socket(void)
 
 	_socket = &(modem_sockets[socket_index]);
 }
-
 
 static void comm_handler_task(void *pvParameters)
 {
@@ -205,6 +217,11 @@ static void comm_handler_task(void *pvParameters)
 				// copy received data to socket(n) buffer
 				_socket->bytes_received = modem_copy_buffer(_socket->rx_buffer);
 
+				// check for modem state changes like:
+				// "NO CARRIER"
+				// "ERROR"
+				handle_modem_events();
+
 				// execute the socket's task_handler
 				// the task will also handle any bubbling up of data to the datareceived callback
 				_socket->task_handler(_socket);
@@ -233,6 +250,26 @@ static void comm_handler_task(void *pvParameters)
 
 	}
 
+}
+
+void handle_modem_events(void)
+{
+	char * ptr = NULL;
+
+	// just handle "NO CARRIER" for now
+	if((ptr = strstr(_socket->rx_buffer, MODEM_TOKEN_NOCARRIER))) {
+		_socket->event_handler->on_disconnect();
+		_socket->socket_status = SCK_CLOSED;
+		// todo: review following two lines
+		comm_enterstate(_socket, COMM_IDLE);
+		socket_exitstate(_socket);
+	}
+
+//	if((ptr = strstr(_socket->rx_buffer, MODEM_TOKEN_NOCARRIER))) {
+//		_socket->event_handler->on_disconnect();
+//	} else if ((ptr = strstr(_socket->rx_buffer, MODEM_TOKEN_ERROR))) {
+//
+//	}
 }
 
 

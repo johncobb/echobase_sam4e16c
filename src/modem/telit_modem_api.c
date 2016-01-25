@@ -443,19 +443,56 @@ sys_result modem_handle_socketwrite(modem_socket_t *socket)
 	return SYS_OK;
 }
 
+//uint8_t modem_handle_socketstatus(modem_socket_t *socket)
+//{
+//
+//	// build the token we're looking for #SS:1 or #SS:2
+//	memset(scratch_buffer, '\0', SCRATCH_BUFFER_LEN);
+//	sprintf(scratch_buffer, MODEM_TOKEN_SOCKETSTATUS_ID, socket->cnx_id);
+//
+//
+//	char * ptr = NULL;
+//	sys_result sys_status;
+//
+////	sys_status = handle_result(scratch_buffer, &ptr);
+//	sys_status = handle_result_ex(socket->rx_buffer, scratch_buffer, &ptr);
+//
+//	/*
+//	 * example result:
+//	#SS: 1,4,217.201.131.110,21
+//	#SS: 2,2,217.201.131.110,1033,194.185.15.73,10510
+//	#SS: 3,3,217.201.131.110,1034,194.185.15.73,10510
+//	#SS: 4,1,217.201.131.110,1035,194.185.15.73,10510
+//	#SS: 5,0
+//	#SS: 6,0
+//	 */
+//
+//	// TODO: RECURSIVLEY PARSE FOR TOKEN MODEM_TOKEN_SOCKETSTATUS
+//	uint8_t socket_index = 0;
+//
+//	if(sys_status == SYS_AT_OK) {
+//		printf("buffer:%s\r\n", ptr);
+//		ptr+=7;
+//		modem_sockets[socket_index].modem_socket_state = ((ptr[0]-'0'));
+//
+//		//printf("creg: %d\r\n", modem_status.creg);
+//	}
+//
+//	return sys_status;
+//}
+
 uint8_t modem_handle_socketstatus(modem_socket_t *socket)
 {
-
-	// build the token we're looking for #SS:1 or #SS:2
-	memset(scratch_buffer, '\0', SCRATCH_BUFFER_LEN);
-	sprintf(scratch_buffer, MODEM_TOKEN_SOCKETSTATUS_ID, socket->cnx_id);
-
 
 	char * ptr = NULL;
 	sys_result sys_status;
 
-//	sys_status = handle_result(scratch_buffer, &ptr);
-	sys_status = handle_result_ex(socket->rx_buffer, scratch_buffer, &ptr);
+	// grab the socket index we're working with
+	uint8_t socket_index =  socket->cnx_id;
+
+	// build the token we're looking for #SS:1 or #SS:2 or #SS:3 etc...
+	memset(scratch_buffer, '\0', SCRATCH_BUFFER_LEN);
+	sprintf(scratch_buffer, MODEM_TOKEN_SOCKETSTATUS_ID, socket_index);
 
 	/*
 	 * example result:
@@ -467,13 +504,13 @@ uint8_t modem_handle_socketstatus(modem_socket_t *socket)
 	#SS: 6,0
 	 */
 
-	// TODO: RECURSIVLEY PARSE FOR TOKEN MODEM_TOKEN_SOCKETSTATUS
-	uint8_t socket_index = 0;
+	sys_status = handle_result_ex(socket->rx_buffer, scratch_buffer, &ptr);
 
 	if(sys_status == SYS_AT_OK) {
 		printf("buffer:%s\r\n", ptr);
 		ptr+=7;
-		modem_sockets[socket_index].modem_socket_state = ((ptr[0]-'0'));
+		// socket_index is base 1 so we need to -1 to reference the array
+		modem_sockets[socket_index-1].modem_socket_state = ((ptr[0]-'0'));
 
 		//printf("creg: %d\r\n", modem_status.creg);
 	}

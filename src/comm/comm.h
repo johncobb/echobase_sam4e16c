@@ -27,7 +27,9 @@
 #include "comm_http.h"
 
 
-
+//#define LOG_COMMIDLE			0
+//#define LOG_COMMRECEIVE		1
+//#define LOG_COMMSTATECHANGE		1
 
 
 //#define COMM_USE_MEMCPY	1

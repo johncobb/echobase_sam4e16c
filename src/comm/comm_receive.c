@@ -15,6 +15,8 @@
 #include "comm_receive.h"
 #include "http_handler.h"
 
+
+
 typedef enum
 {
 	COMM_RECEIVE_RX = 0,
@@ -36,7 +38,10 @@ sys_result  comm_receive(modem_socket_t * socket)
 	if(socket->state_handle.state == COMM_RECEIVE_RX) {
 
 		if(socket->state_handle.substate == COMM_RECEIVE_INVOKE) {
+
+#ifdef LOG_COMMRECEIVE
 			printf("socket(%d) receive...\r\n", socket->socket_id);
+#endif
 
 			// prepare the socket receive buffer
 			memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
@@ -53,7 +58,9 @@ sys_result  comm_receive(modem_socket_t * socket)
 			if(socket_timeout(socket)) {
 				socket->socket_error = SCK_ERR_TIMEOUT;
 
+#ifdef LOG_COMMRECEIVE
 				printf("socket(%d) receive timeout\r\n", socket->socket_id);
+#endif
 
 				// TODO: review for proper transition after receive
 				comm_enterstate(socket, COMM_IDLE);

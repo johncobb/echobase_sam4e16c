@@ -28,8 +28,6 @@ typedef enum
 }comm_send_sub_state_t;
 
 
-
-
 sys_result  comm_send(modem_socket_t * socket)
 {
 	sys_result result;
@@ -62,12 +60,9 @@ sys_result  comm_send(modem_socket_t * socket)
 				socket_exitstate(socket);
 				xSemaphoreGive(tcp_send_signal);
 				result = SYS_OK;
-
 			}
 
 			if(socket->bytes_received > 0) {
-//				printf("bytes_received: %lu, %s\r\n", socket->bytes_received, socket->rx_buffer);
-//				socket->handle_data(socket->rx_buffer, socket->bytes_received);
 				socket->event_handler->on_datareceive(socket->rx_buffer, socket->bytes_received);
 				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
 				xSemaphoreGive(tcp_send_signal);
