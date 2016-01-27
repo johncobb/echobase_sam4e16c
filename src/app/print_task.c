@@ -118,8 +118,8 @@ static sys_result app_handler_ondatareceive(uint8_t *data, uint32_t len)
 static uint8_t connection_retries = 0;
 
 // todo: starting of hb code
-//					if((t_now - t_heartbeat_timeout) > 5000) {
-//						t_heartbeat_timeout = t_now;
+// if((t_now - t_heartbeat_timeout) > 5000) {
+// 		t_heartbeat_timeout = t_now;
 
 void task_handler(void)
 {
@@ -127,7 +127,7 @@ void task_handler(void)
 
 	BaseType_t result;
 
-	uint8_t * ip_endpoint = "google.com";
+	uint8_t * ip_endpoint = IP_ENDPIONT_PRINTTASK;
 
 	// todo: some other fun ips to hit
 //	uint8_t * ip_endpoint = "appserver02.cphandheld.com";
@@ -182,10 +182,10 @@ void task_handler(void)
 					while(true) {
 
 						// bail if we lost our connection
-						if(tcp_isconnected == false)
+						if(tcp_isconnected == false){
+							printf("tcp_isconnected=false\r\n");
 							break;
-
-
+						}
 
 						// call tcp receive so we can process data
 						result = cph_tcp_receive(&sck_connection, data);
@@ -199,7 +199,7 @@ void task_handler(void)
 //						}
 
 //						printf("waiting 1s.\r\n");
-						vTaskDelay(1000);
+						vTaskDelay(500);
 					}
 
 				}

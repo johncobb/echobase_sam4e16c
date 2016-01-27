@@ -366,6 +366,23 @@ sys_result modem_handle_socketopen(modem_socket_t *socket)
 	return sys_status;
 }
 
+sys_result modem_handle_socketopen_ex(modem_socket_t *socket, uint8_t * buffer)
+{
+	char * ptr = NULL;
+	sys_result sys_status;
+
+	sys_status = handle_result_ex(buffer, MODEM_TOKEN_CONNECT, &ptr);
+
+	printf("buffer:%s\r\n", ptr);
+
+	if(sys_status == SYS_AT_OK) {
+		modem_status.connection = CNX_OPENED;
+		printf("socket open.\r\n");
+	}
+
+	return sys_status;
+}
+
 sys_result modem_handle_socketclose(modem_socket_t *socket)
 {
 	char * ptr = NULL;

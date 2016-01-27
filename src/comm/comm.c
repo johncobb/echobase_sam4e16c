@@ -30,7 +30,8 @@ void unit_test_guardtime(void);
 QueueHandle_t xCommQueue;
 QueueHandle_t xCommQueueRequest;
 
-static uint8_t out_buffer[COMM_BUFFER_LEN+1];
+
+
 
 comm_state_t comm_state = COMM_INIT;
 comm_network_state_t comm_network_state = {0,0};
@@ -41,7 +42,7 @@ uint32_t bytes_received = 0;
 
 volatile bool comm_ready = false;
 
-void handle_modem_events(void);
+//void handle_modem_events(void);
 
 modem_socket_t modem_sockets[] =
 {
@@ -69,8 +70,6 @@ extern void comm_signal_handler(uint8_t sig)
 
 void create_comm_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_priority)
 {
-	memset(out_buffer, '\0', COMM_BUFFER_LEN+1);
-
 	// semaphores to be processed from CLI (command line interpreter)
 	vSemaphoreCreateBinary(comm_signal);
 	vSemaphoreCreateBinary(tcp_connect_signal);
@@ -78,6 +77,7 @@ void create_comm_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_pr
 	vSemaphoreCreateBinary(tcp_receive_signal);
 	vSemaphoreCreateBinary(tcp_suspend_signal);
 	vSemaphoreCreateBinary(tcp_close_signal);
+
 
 	xCommQueue = xQueueCreate(10, sizeof(comm_frame_t));
 
@@ -91,6 +91,8 @@ void create_comm_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_pr
 					NULL);
 
 }
+
+
 
 void comm_enterstate(modem_socket_t *socket, comm_state_t state)
 {
@@ -145,6 +147,11 @@ void comm_enterstate(modem_socket_t *socket, comm_state_t state)
 	}
 }
 
+void comm_exitstate(void)
+{
+
+}
+
 void comm_set_state(comm_state_t state)
 {
 	comm_state = state;
@@ -153,7 +160,6 @@ void comm_set_state(comm_state_t state)
 uint8_t socket_index = 0;
 static BaseType_t result;
 
-uint8_t comm_buffer[COMM_BUFFER_LEN+1] = {0};
 comm_task_t task_mgr;
 
 static bool modem_ready = false;
@@ -217,10 +223,24 @@ static void comm_handler_task(void *pvParameters)
 				// copy received data to socket(n) buffer
 				_socket->bytes_received = modem_copy_buffer(_socket->rx_buffer);
 
+
+//				handle_modem_events();
+
+				// todo: new modem event handler code
 				// check for modem state changes like:
 				// "NO CARRIER"
 				// "ERROR"
-				handle_modem_events();
+//				sys_result result = handle_modem_events2(_socket);
+				sys_result result = handle_modem_events(_socket->rx_buffer, _socket->bytes_received);
+
+				if(result == SYS_ERR_AT_NOCARRIER) {
+					_socket->event_handler->on_disconnect();
+					_socket->socket_status = SCK_CLOSED;
+					comm_enterstate(_socket, COMM_IDLE);
+					socket_exitstate(_socket);
+				}
+				// todo: end new modem event handler code
+
 
 				// execute the socket's task_handler
 				// the task will also handle any bubbling up of data to the datareceived callback
@@ -252,25 +272,26 @@ static void comm_handler_task(void *pvParameters)
 
 }
 
-void handle_modem_events(void)
-{
-	char * ptr = NULL;
 
-	// just handle "NO CARRIER" for now
-	if((ptr = strstr(_socket->rx_buffer, MODEM_TOKEN_NOCARRIER))) {
-		_socket->event_handler->on_disconnect();
-		_socket->socket_status = SCK_CLOSED;
-		// todo: review following two lines
-		comm_enterstate(_socket, COMM_IDLE);
-		socket_exitstate(_socket);
-	}
 
+
+
+
+//void handle_modem_events(void)
+//{
+//	char * ptr = NULL;
+//
+//	// just handle "NO CARRIER" for now
 //	if((ptr = strstr(_socket->rx_buffer, MODEM_TOKEN_NOCARRIER))) {
 //		_socket->event_handler->on_disconnect();
-//	} else if ((ptr = strstr(_socket->rx_buffer, MODEM_TOKEN_ERROR))) {
-//
+//		_socket->socket_status = SCK_CLOSED;
+//		// todo: review following two lines
+//		comm_enterstate(_socket, COMM_IDLE);
+//		socket_exitstate(_socket);
 //	}
-}
+//
+//
+//}
 
 
 static void request_queue(void)

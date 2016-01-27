@@ -60,8 +60,10 @@ extern xSemaphoreHandle tcp_close_signal;
 extern QueueHandle_t xCommQueue;
 extern QueueHandle_t xCommQueueRequest;
 
-#define COMM_BUFFER_LEN		256
-extern uint8_t comm_buffer[];
+#define COMM_RXBUFFER_LEN		128
+uint8_t comm_rx_buffer[];
+uint8_t comm_rx_buffer_index;
+
 
 
 #define	MAX_SOCKET_LEN		6
@@ -152,6 +154,7 @@ extern volatile bool comm_ready;
 extern comm_state_t comm_state;
 
 void comm_enterstate(modem_socket_t *socket, comm_state_t state);
+void comm_exitstate(void);
 void comm_set_state(comm_state_t state);
 
 

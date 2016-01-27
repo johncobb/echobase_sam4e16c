@@ -40,9 +40,9 @@ void cph_tcp_onconnect(void)
 
 void cph_tcp_ondisconnect(void)
 {
+	tcp_isconnected = false;
 	tcp_event_handler.on_disconnect();
 //	printf("cph_tcp_ondisconnect\r\n");
-	tcp_isconnected = false;
 }
 
 void cph_tcp_ondatareceive(uint8_t *data, uint32_t len)

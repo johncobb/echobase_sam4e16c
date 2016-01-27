@@ -48,6 +48,14 @@ sys_result  comm_send(modem_socket_t * socket)
 			result = SYS_OK;
 		} else if(socket->state_handle.substate == COMM_SEND_WAITREPLY) {
 
+			// todo: moved to top of if to prevent missing packets due to timeout
+			// and subsequent reseting of the buffer in socket_exitstate()
+			if(socket->bytes_received > 0) {
+				socket->event_handler->on_datareceive(socket->rx_buffer, socket->bytes_received);
+				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
+				xSemaphoreGive(tcp_send_signal);
+			}
+
 			// wait up to n seconds.
 			if(socket_timeout(socket)) {
 				socket->socket_error = SCK_ERR_TIMEOUT;
@@ -62,11 +70,12 @@ sys_result  comm_send(modem_socket_t * socket)
 				result = SYS_OK;
 			}
 
-			if(socket->bytes_received > 0) {
-				socket->event_handler->on_datareceive(socket->rx_buffer, socket->bytes_received);
-				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
-				xSemaphoreGive(tcp_send_signal);
-			}
+			// todo: moved to top of if
+//			if(socket->bytes_received > 0) {
+//				socket->event_handler->on_datareceive(socket->rx_buffer, socket->bytes_received);
+//				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
+//				xSemaphoreGive(tcp_send_signal);
+//			}
 			result = SYS_OK;
 		}
 	}

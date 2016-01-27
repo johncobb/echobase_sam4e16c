@@ -29,7 +29,8 @@
 //#define LOG_MSG_COBSDECODED			1
 
 
-#define IP_ENDPIONT		"bs.cphandheld.com"
+#define IP_ENDPIONT					"bs.cphandheld.com"
+#define IP_ENDPIONT_PRINTTASK		"google.com"
 
 
 #endif /* SRC_CPH_CPH_H_ */

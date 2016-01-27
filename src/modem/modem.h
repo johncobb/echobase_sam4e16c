@@ -11,22 +11,24 @@
 #include "semphr.h"
 #include "freertos_usart_serial.h"
 
-/* Dimensions the buffer into which input characters are placed. */
-#define MAX_INPUT_SIZE          128
-
 /* The size of the buffer provided to the USART driver for storage of received
  * bytes. */
-#define RX_BUFFER_SIZE_BYTES    (128)
-
-
 #define MODEM_RX_BUFFER_SIZE	(128)
-
-
 /* Baud rate to use. */
-#define DIALER_BAUD_RATE           115200
-
+#define DIALER_BAUD_RATE		115200
 /* The USART instance used for input and output. */
 extern freertos_usart_if modem_usart;
+
+
+typedef void (*modem_connect_func_t)(void);
+typedef void (*modem_ondisconnect_func_t)(void);
+
+typedef struct
+{
+	modem_connect_func_t on_connect;
+	modem_ondisconnect_func_t on_disconnect;
+
+}modem_event_handler_t;
 
 typedef enum
 {
@@ -55,8 +57,6 @@ typedef enum
 }sys_result;
 
 
-
-
 typedef struct {
 	uint8_t type;
 
@@ -64,26 +64,24 @@ typedef struct {
 
 
 extern uint32_t bytes_received;
-
-uint32_t modem_handler_async(uint32_t millis);
-sys_result modem_config_handler(void);
-void reset_rx_buffer(void);
+xSemaphoreHandle config_signal;
 
 sys_result modem_init(void);
-uint8_t modem_connect(void);
-uint8_t modem_udpsocket(void);
-uint8_t modem_httpsocket(void);
-sys_result configure_sockets(void);
+sys_result modem_config_handler(void);
+uint32_t modem_handler_async(uint32_t millis);
+//sys_result handle_modem_events(modem_socket_t * socket);
+sys_result handle_modem_events(uint8_t *data, int len);
 
-xSemaphoreHandle config_signal;
+void reset_rx_buffer(void);
+
 
 sys_result modem_config(uint8_t config_index);
 uint32_t read_modem(void);
 sys_result handle_result(char * token, char ** ptr_out);
 sys_result handle_result_ex(uint8_t * rx_buffer, char * token, char ** ptr_out);
 uint32_t handle_stream(uint8_t *data, uint32_t len, uint32_t millis);
-
 uint32_t modem_copy_buffer(uint8_t *data);
+
 
 void SEND_AT(uint8_t *cmd);
 void SEND_RAW(uint8_t *cmd);

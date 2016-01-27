@@ -23,17 +23,13 @@ uint8_t socket_reserve(socket_connection_t *cnx, socket_event_handler_t *handler
 
 	printf("reserving socket: (%d)\r\n", _socket_pool_index);
 
-	// store the socket
+	// store reference to the socket
 	cnx->socket = &modem_sockets[_socket_pool_index];
-	// assign the data handler
-//	cnx->socket->handle_data = cnx->handler;
-
-	// todo: new code here
 	cnx->socket->event_handler = handler;
 
+	// initialize state variables
 	cnx->socket->state_handle.state = 0;
 	cnx->socket->state_handle.substate = 0;
-
 
 	return _socket_pool_index;
 }
@@ -46,7 +42,6 @@ uint8_t socket_free()
 	}
 
 	printf("freeing socket: (%d)\r\n", _socket_pool_index);
-//	modem_sockets[_socket_pool_index].handle_data = NULL;
 	modem_sockets[_socket_pool_index].event_handler = NULL;
 	modem_sockets[_socket_pool_index].socket_error = 0;
 
@@ -93,13 +88,11 @@ bool socket_timeout(modem_socket_t * socket)
 
 	if (xTaskCheckForTimeOut(&socket->state_handle.timeout, &socket->state_handle.max_wait_millis) == pdTRUE)
 	{
-//		printf("idle_timeout.\r\n");
 		timeout = true;
 	}
 
 	return timeout;
 }
-
 
 void socket_enterstate(modem_socket_t * socket, uint8_t state)
 {

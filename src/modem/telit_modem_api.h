@@ -64,6 +64,7 @@ uint8_t modem_handle_querynetwork(void);
 uint8_t modem_handle_querysignal(void);
 
 sys_result modem_handle_socketopen(modem_socket_t *socket);
+sys_result modem_handle_socketopen_ex(modem_socket_t *socket, uint8_t * buffer);
 uint8_t modem_handle_socketclose(modem_socket_t *socket);
 sys_result modem_handle_socketresume(modem_socket_t *socket);
 uint8_t modem_handle_socketsuspend(modem_socket_t *socket);

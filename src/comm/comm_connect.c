@@ -6,7 +6,7 @@
  */
 
 
-
+#include <string.h>
 #include "modem_defs.h"
 #include "telit_modem_api.h"
 #include "comm.h"

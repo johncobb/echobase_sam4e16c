@@ -54,6 +54,14 @@ sys_result  comm_receive(modem_socket_t * socket)
 			result = SYS_OK;
 		} else if(socket->state_handle.substate == COMM_RECEIVE_WAITREPLY) {
 
+			// if we receive bytes we need to copy the data and signal the
+			// function to return
+//			if(socket->bytes_received > 0) {
+//				socket->event_handler->on_datareceive(socket->rx_buffer, socket->bytes_received);
+//				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
+//				xSemaphoreGive(tcp_receive_signal);
+//			}
+
 			// wait up to n seconds.
 			if(socket_timeout(socket)) {
 				socket->socket_error = SCK_ERR_TIMEOUT;
@@ -70,11 +78,9 @@ sys_result  comm_receive(modem_socket_t * socket)
 
 			}
 
-			// if we receive byts we need to copy the data and signal the
-			// function to return
+//			// if we receive bytes we need to copy the data and signal the
+//			// function to return
 			if(socket->bytes_received > 0) {
-//				printf("bytes_received: %lu, %s\r\n", socket->bytes_received, socket->rx_buffer);
-//				socket->handle_data(socket->rx_buffer, socket->bytes_received);
 				socket->event_handler->on_datareceive(socket->rx_buffer, socket->bytes_received);
 				memset(socket->rx_buffer, '\0', SOCKET_BUFFER_LEN+1);
 				xSemaphoreGive(tcp_receive_signal);

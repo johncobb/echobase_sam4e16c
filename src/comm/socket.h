@@ -21,7 +21,6 @@
 #define SOCKET_IPENDPOINT			"bs.cphandheld.com"
 
 
-
 typedef enum
 {
 	SOCKET_CLOSED = 0,
@@ -50,13 +49,9 @@ typedef enum
 }socket_error_t;
 
 
-
-//typedef sys_result (*socket_func_t)(uint8_t *data, uint32_t len);
-
 typedef void (*socket_connect_func_t)(void);
 typedef void (*socket_ondisconnect_func_t)(void);
 typedef void (*socket_onreceive_func_t)(uint8_t *data, uint32_t len);
-
 
 typedef struct
 {
@@ -67,7 +62,6 @@ typedef struct
 }socket_event_handler_t;
 
 
-
 typedef struct
 {
 	modem_socket_type type; // SOCKET_TCP, SOCKET_UDP
@@ -75,10 +69,6 @@ typedef struct
 	uint16_t port;
 
 }modem_socket_conf_t;
-
-
-
-
 
 typedef sys_result (*comm_task_t)(void *);
 

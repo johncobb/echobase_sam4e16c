@@ -7,20 +7,21 @@
 
 #include <stdint.h>
 #include <string.h>
-#include "sysclk.h"
+#include <cph.h>
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "modem.h"
 #include "modem_defs.h"
-#include "freertos_usart_serial.h"
-#include "board.h"
-#include "socket.h"
-#include "comm_if.h"
 #include "telit_modem_api.h"
+#include "socket.h"
 
+#define MODEM_RX_BUFFER_LEN						128
+#define MODEM_NOCARRIER_BUFFER_LEN				10
 
+// copy the bytes into the local comm_rx_buffer. we will accumulate until
+// we see the token we're after.
+// memcpy(&comm_rx_buffer[comm_rx_buffer_index], socket->rx_buffer, socket->bytes_received);
 
-#define RX_BUFFER_LEN		128
 
 freertos_usart_if modem_usart;
 
@@ -31,21 +32,20 @@ modem_status_t modem_status;
 
 xSemaphoreHandle config_signal = 0;
 
-void basic_handler(void);
-
 void pause(void);
+void reset_modem_event_buffers(void);
 
 
 
 uint32_t timeout = 0;
-//char received_char;
-//int8_t input_index = 0;
-//static char input_string[MAX_INPUT_SIZE];
+
 char * ptr = NULL;
 
 uint32_t bytes_received;
-uint8_t rx_buffer[RX_BUFFER_LEN+1];
+uint8_t rx_buffer[MODEM_RX_BUFFER_LEN+1];
 
+uint8_t modem_nocarrier_buffer[MODEM_NOCARRIER_BUFFER_LEN] = {0};
+uint8_t nocarrier_window_index = 0;
 
 
 void reset_rx_buffer(void)
@@ -54,9 +54,10 @@ void reset_rx_buffer(void)
 	memset(modem_rx_buffer, '\0', sizeof(modem_rx_buffer));
 }
 
-void basic_handler(void)
+void reset_modem_event_buffers(void)
 {
-	printf("basic_handler\r\n");
+	memset(modem_nocarrier_buffer, '\0', sizeof(modem_nocarrier_buffer));
+	nocarrier_window_index = 0;
 }
 
 void pause(void)
@@ -70,15 +71,10 @@ void pause(void)
 
 
 /* The buffer provided to the USART driver to store incoming character in. */
-static uint8_t receive_buffer[RX_BUFFER_SIZE_BYTES] = {0};
+static uint8_t receive_buffer[MODEM_RX_BUFFER_SIZE] = {0};
 
 static void init_hw(void);
 static void init_usart(Usart *usart_base);
-
-
-
-//uint32_t pow_mon = pio_get_pin_value(MDM_POWMON_IDX);
-//uint32_t pow_mon2 = pio_get(PIOC, PIO_TYPE_PIO_INPUT, PIO_PC25);
 
 void init_hw(void)
 {
@@ -99,7 +95,6 @@ void init_hw(void)
 
 	while(true) {
 
-
 		if(num_tries++ == 3) break;
 
 		vTaskDelay(3000);
@@ -119,7 +114,6 @@ void init_hw(void)
 			pio_set_pin_high(MDM_ENABLE_IDX);
 		}
 	}
-
 
 	while(true) {
 		printf("toggle modem_onoff: HIGH\r\n");
@@ -145,71 +139,29 @@ void init_hw(void)
 	}
 
 	printf("init_hw done\r\n");
-
 }
 
-void init_hw2(void)
-{
-
-	//printf("initializing modem hardware...\r\n");
-	//SEND_AT("init_hw\r\n");
-	// Sanity check make sure pins are low
-	pio_set_pin_low(MDM_ENABLE_IDX);
-	pio_set_pin_low(MDM_RESET_IDX);
-	pio_set_pin_low(MDM_ONOFF_IDX);
-
-	//printf("checking modem power monitor\r\n");
-
-	// Chek for power on
-
-//	uint8_t num_tries = 1;
+// deprecated simplified init. does not gurantee reset
+//void init_hw2(void)
+//{
+//	//printf("initializing modem hardware...\r\n");
+//	// Sanity check make sure pins are low
+//	pio_set_pin_low(MDM_ENABLE_IDX);
+//	pio_set_pin_low(MDM_RESET_IDX);
+//	pio_set_pin_low(MDM_ONOFF_IDX);
 //
 //	while(true) {
-//
-//		printf("try %d\r\n", num_tries);
-//		if(num_tries++ == 3) break;
-//
-//		//printf("delay 3 sec.\r\n");
+//		pio_set_pin_high(MDM_ONOFF_IDX);
 //		vTaskDelay(3000);
 //
-//		uint32_t powmon = 0;
-//		powmon = pio_get_pin_value(MDM_POWMON_IDX);
-//		vTaskDelay(2);
-//
-//		printf("powmon=%d\r\n", powmon);
-//
-//		uint32_t foo = 0;
-//		//if(pio_get_pin_value(MDM_POWMON_IDX) == 0) {
-//		if(powmon == 0) {
+//		pio_set_pin_low(MDM_ONOFF_IDX);
+//		vTaskDelay(2000);
+//		if(pio_get_pin_value(MDM_POWMON_IDX) == 1)
 //			break;
-//		} else {
-//			//printf("toggle modem enable high-low\r\n");
-//			pio_set_pin_low(MDM_ENABLE_IDX);
-//			vTaskDelay(10);
-//			pio_set_pin_high(MDM_ENABLE_IDX);
-//
-//		}
 //	}
-
-
-	while(true) {
-		pio_set_pin_high(MDM_ONOFF_IDX);
-		vTaskDelay(3000);
-
-		pio_set_pin_low(MDM_ONOFF_IDX);
-		vTaskDelay(2000);
-		if(pio_get_pin_value(MDM_POWMON_IDX) == 1)
-			break;
-
-	}
-
-
-
-	printf("init_hw done\r\n");
-
-}
-
-#include "sysclk.h" // hack: move to top once proven
+//
+//	printf("init_hw done\r\n");
+//}
 
 sys_result modem_init(void)
 {
@@ -222,63 +174,11 @@ sys_result modem_init(void)
 	// init usart
 	init_usart(MODEM_USART);
 
+	// reset buffers used to detect carrier signals from modem
+	reset_modem_event_buffers();
+
 	return SYS_OK;
 }
-
-//sys_result modem_config(uint8_t config_index)
-//{
-//	at_modem_cmd_t * at_cmd = &(at_cfg_commands[config_index]);
-//
-//	printf("wait .5s\r\n");
-//	vTaskDelay(500);
-//
-//	while(at_cmd->fnc_handler != NULL)
-//	{
-//
-//		// sanity check here
-//		// if we've reached the end of the array all config functions have been called
-//		// so return SYS_CONFIG_OK
-//		if(at_cmd->fnc_handler == NULL) return SYS_CONFIG_OK;
-//
-//		// dispatch the function
-//		at_cmd->fnc_handler();
-//
-//		// advance to next command
-//		at_cmd++;
-//
-//		char * ptr = NULL;
-//
-//		sys_result sys_status;
-//
-//		if(at_cmd->fnc_callback != NULL) {
-//			at_cmd->fnc_callback();
-//		} else {
-//			sys_status = handle_result(MODEM_TOKEN_OK, &ptr,  1000);
-//		}
-//
-//		vTaskDelay(50);
-//
-//
-//		if(sys_status == SYS_AT_OK) {
-//			//at_cmd++;
-//			printf("SYS_OK\r\n");
-//			printf("buffer:\r\n%s\r\n", ptr);
-//			continue;
-//		} else if (sys_status == SYS_ERR_AT_FAIL) {
-//			printf("SYS_ERR_AT_FAIL\r\n");
-//		} else if (sys_status == SYS_ERR_AT_NOCARRIER) {
-//			printf("SYS_ERR_AT_NO_CARRIER\r\n");
-//		} else if(sys_status == SYS_ERR_AT_TIMEOUT) {
-//			printf("SYS_ERR_AT_TIMEOUT\r\n");
-//			printf("buffer:\r\n%s\r\n", ptr);
-//			//return SYS_ERR_AT_FAIL;
-//		}
-//
-//	}
-//
-//	return SYS_OK;
-//}
-
 
 sys_result modem_config_handler(void)
 {
@@ -305,54 +205,11 @@ sys_result modem_config_handler(void)
 	return sys_status;
 }
 
-
-sys_result configure_sockets(void)
-{
-	printf("configure_sockets...\r\n");
-	modem_socket_t * socket = &(modem_sockets[0]);
-
-	while(socket->cnx_id > 0)
-	{
-		char * ptr = NULL;
-
-		sys_result sys_status;
-
-		// cnx_id, ctx_id, pkt_size, glb_timeout, cnx_timeout (tenths of second), tx_timeout (tenths of second)
-		modem_socketconfigex(socket);
-
-		sys_status = handle_result(MODEM_TOKEN_OK, &ptr);
-
-		socket++;
-
-		if(sys_status == SYS_AT_OK) {
-			printf("SYS_OK\r\n");
-			printf("buffer:\r\n%s\r\n", ptr);
-			continue;
-		} else if (sys_status == SYS_ERR_AT_FAIL) {
-			printf("SYS_ERR_AT_FAIL\r\n");
-		} else if (sys_status == SYS_ERR_AT_NOCARRIER) {
-			printf("SYS_ERR_AT_NO_CARRIER\r\n");
-		} else if(sys_status == SYS_ERR_AT_TIMEOUT) {
-			printf("SYS_ERR_AT_TIMEOUT\r\n");
-			printf("buffer:\r\n%s\r\n", ptr);
-			//return SYS_ERR_AT_FAIL;
-		}
-
-	}
-
-	return SYS_OK;
-}
-
-
-
-
-
 static void init_usart(Usart *usart_base)
 {
-
 	freertos_peripheral_options_t driver_options = {
 		receive_buffer,									/* The buffer used internally by the USART driver to store incoming characters. */
-		RX_BUFFER_SIZE_BYTES,							/* The size of the buffer provided to the USART driver to store incoming characters. */
+		MODEM_RX_BUFFER_SIZE,							/* The size of the buffer provided to the USART driver to store incoming characters. */
 		configLIBRARY_MAX_SYSCALL_INTERRUPT_PRIORITY,	/* The priority used by the USART interrupts. */
 		USART_RS232,									/* Configure the USART for RS232 operation. */
 		//UART_RS232,
@@ -375,7 +232,6 @@ static void init_usart(Usart *usart_base)
 			&driver_options);
 	configASSERT(modem_usart);
 }
-
 
 void SEND_AT(uint8_t *cmd)
 {
@@ -411,8 +267,6 @@ void SEND_RAW(uint8_t *cmd)
 								max_block_time_ticks);
 }
 
-
-
 uint32_t modem_handler_async(uint32_t millis)
 {
 	portTickType max_wait_millis = millis / portTICK_RATE_MS;
@@ -423,9 +277,73 @@ uint32_t modem_handler_async(uint32_t millis)
 	return len;
 }
 
+
+#define TEMP_BUFFER_LEN			9
+#define NOCARRIER_WINDOW_MAX	(MODEM_NOCARRIER_BUFFER_LEN-1) // once less than the total buffer
+
+sys_result handle_modem_events(uint8_t *data, int len)
+{
+	sys_result result = SYS_OK;
+
+	for (int i=0; i<len; i++) {
+
+		// get a reference to the current byte
+		uint8_t c = data[i];
+
+		// guard against overwriting the last byte in our buffer once
+		// we've hit the NOCARRIER_WINDOW_MAX since we want to copy
+		// the last 9 bytes received into slots 0 thru 8 after which
+		// we will copy the current byte received into the last slot 9
+		if(nocarrier_window_index < NOCARRIER_WINDOW_MAX)
+			modem_nocarrier_buffer[nocarrier_window_index] = c;
+
+		// if we reached the end check to see
+		// if we have the token we're looking for
+		// either way reset the index for the next round of bytes
+		if(nocarrier_window_index == NOCARRIER_WINDOW_MAX) {
+
+			// prep the tmp_buffer
+			uint8_t tmp_buffer[TEMP_BUFFER_LEN] = {0};
+			memset(tmp_buffer, 0, sizeof(tmp_buffer));
+
+			// __________
+			// \nno carri
+			// nno carrie
+			// no carrier
+
+			// copy bytes 1 thru 9 into our tmp_buffer
+			// we don't care about byte 0 because its about
+			// to be bumped out of the window we care about
+			memcpy(tmp_buffer, &modem_nocarrier_buffer[1], sizeof(tmp_buffer));
+
+			// reset our primary buffer
+			memset(modem_nocarrier_buffer, 0, sizeof(modem_nocarrier_buffer));
+
+			// copy the 9 bytes from tmp_buffer into slots 0 thru 8
+			memcpy(modem_nocarrier_buffer, tmp_buffer, sizeof(tmp_buffer));
+
+			// copy the last byte received into the last byte of the buffer
+			modem_nocarrier_buffer[nocarrier_window_index] = c;
+
+			char * ptr = NULL;
+
+			if((ptr = strstr(modem_nocarrier_buffer, MODEM_TOKEN_NOCARRIER))) {
+				printf("holy shit it worked\r\n");
+				reset_modem_event_buffers();
+				result = SYS_ERR_AT_NOCARRIER;
+				break;
+			}
+		}
+		// move index to next slot
+		if(nocarrier_window_index < NOCARRIER_WINDOW_MAX)
+			nocarrier_window_index++;
+	}
+
+	return result;
+}
+
 sys_result handle_result(char * token, char ** ptr_out)
 {
-
 
 	// SPECIAL CASE FOR HANDLING ASYNCHRONOUS DATA
 //	if(token == NULL) {
@@ -453,7 +371,6 @@ sys_result handle_result(char * token, char ** ptr_out)
 		printf("SYS_ERR_AT_NOCARRIER\r\n");
 		return SYS_ERR_AT_NOCARRIER;
 	}
-
 
 	// set ptr_out to the rx_buffer for troubleshooting
 	if(ptr_out != NULL) {
@@ -485,62 +402,11 @@ sys_result handle_result_ex(uint8_t * rx_buffer, char * token, char ** ptr_out)
 		return SYS_ERR_AT_NOCARRIER;
 	}
 
-
 	// set ptr_out to the rx_buffer for troubleshooting
 	if(ptr_out != NULL) {
 		*ptr_out = rx_buffer;
 	}
-
 }
-
-sys_result handle_result2(char * token, char ** ptr_out, uint32_t millis)
-{
-
-	portTickType max_wait_millis = millis / portTICK_RATE_MS;
-
-	memset(rx_buffer, '\0', RX_BUFFER_LEN+1);
-
-	bytes_received = freertos_usart_serial_read_packet(modem_usart, rx_buffer, RX_BUFFER_LEN, max_wait_millis);
-
-	if (bytes_received > 0) {
-
-		// SPECIAL CASE FOR HANDLING ASYNCHRONOUS DATA
-		if(token == NULL) {
-			*ptr_out = rx_buffer;
-			return SYS_OK;
-		}
-
-		//if((ptr = strstr(input_string, token))) {
-		if((ptr = strstr(rx_buffer, token))) {
-			if(ptr_out != NULL) {
-				*ptr_out = ptr;
-			}
-			//printf("SYS_AT_OK\r\n");
-			return SYS_AT_OK;
-		} else if ((ptr = strstr(rx_buffer, MODEM_TOKEN_ERROR))) {
-			if(ptr_out != NULL) {
-				*ptr_out = ptr;
-			}
-			printf("SYS_ERR_AT_FAIL\r\n");
-			return SYS_ERR_AT_FAIL;
-		} else if((ptr = strstr(rx_buffer, MODEM_TOKEN_NOCARRIER))) {
-			if(ptr_out != NULL) {
-				*ptr_out = ptr;
-			}
-			printf("SYS_ERR_AT_NOCARRIER\r\n");
-			return SYS_ERR_AT_NOCARRIER;
-		}
-	}
-
-	// set ptr_out to the rx_buffer for troubleshooting
-	if(ptr_out != NULL) {
-		*ptr_out = rx_buffer;
-	}
-
-	printf("SYS_ERR_AT_TIMEOUT\r\n");
-	return SYS_ERR_AT_TIMEOUT;
-}
-
 
 uint32_t handle_stream(uint8_t *data, uint32_t len, uint32_t millis)
 {
@@ -555,8 +421,8 @@ uint32_t read_modem(void)
 {
 	portTickType max_wait_millis = 20 / portTICK_RATE_MS;
 
-	memset(rx_buffer, '\0', RX_BUFFER_LEN+1);
-	return freertos_usart_serial_read_packet(modem_usart, rx_buffer, RX_BUFFER_LEN, max_wait_millis);
+	memset(rx_buffer, '\0', MODEM_RX_BUFFER_LEN+1);
+	return freertos_usart_serial_read_packet(modem_usart, rx_buffer, MODEM_RX_BUFFER_LEN, max_wait_millis);
 }
 
 uint32_t modem_copy_buffer(uint8_t *data)
@@ -565,62 +431,6 @@ uint32_t modem_copy_buffer(uint8_t *data)
 	return bytes_received;
 }
 
-
-//static sys_result handle_result(char * token, char ** ptr_out, uint32_t millis)
-//{
-//
-//
-//	//portTickType max_block_time_ticks = 200UL / portTICK_RATE_MS;
-//	portTickType max_wait_millis = millis / portTICK_RATE_MS;
-//	input_index = 0;
-//	memset(input_string, '\0', MAX_INPUT_SIZE);
-//	memset(rx_buffer, '\0', RX_BUFFER_LEN+1);
-//
-//	timeout = ((uint32_t)sys_now()) + (1000);
-//
-//	while(true)
-//	{
-//		// check for timeout
-//		if(sys_now() >= timeout) {
-//			printf("at timeout\r\n");
-//			break;
-//		}
-//
-//		bytes_received = freertos_usart_serial_read_packet(modem_usart, rx_buffer, RX_BUFFER_LEN, max_wait_millis);
-//
-//		if (bytes_received > 0) {
-//
-//			//printf("received %c", (char) received_char);
-//
-//
-//			//if((ptr = strstr(input_string, token))) {
-//			if((ptr = strstr(rx_buffer, token))) {
-//				if(ptr_out != NULL) {
-//					*ptr_out = ptr;
-//					//printf("sys_ok\r\n");
-//				}
-//				return SYS_AT_OK;
-//			} else if ((ptr = strstr(input_string, MODEM_TOKEN_ERROR))) {
-//				*ptr_out = ptr;
-//				return SYS_ERR_AT_FAIL;
-//			} else if((ptr = strstr(input_string, MODEM_TOKEN_NOCARRIER))) {
-//				*ptr_out = ptr;
-//				return SYS_ERR_AT_NOCARRIER;
-//			} else if (input_index < MAX_INPUT_SIZE) {
-//				if(received_char == '\0')
-//					continue;
-//				input_string[input_index] = received_char;
-//				//printf("buffer: %s\r\n", input_string);
-//				input_index++;
-//			}
-//
-//		}
-//	}
-//	// set ptr_out to the char array
-//	*ptr_out = input_string;
-//	//printf("sys_err_at_fail\r\n");
-//	return SYS_ERR_AT_TIMEOUT;
-//}
 
 
 
