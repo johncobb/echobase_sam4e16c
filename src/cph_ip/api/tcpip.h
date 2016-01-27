@@ -25,7 +25,7 @@ typedef enum
 }tcp_result;
 
 
-extern bool tcp_isconnected;
+extern volatile bool tcp_isconnected;
 
 uint8_t cph_tcp_buffer[DEFAULT_TCP_BUFFERSIZE];
 

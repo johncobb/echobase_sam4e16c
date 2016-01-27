@@ -154,6 +154,8 @@ void task_handler(void)
 
 	while(true) {
 
+
+
 		if(start_task) {
 
 //			start_task = false;
@@ -199,8 +201,13 @@ void task_handler(void)
 //						}
 
 //						printf("waiting 1s.\r\n");
-						vTaskDelay(500);
+						vTaskDelay(50);
 					}
+
+					printf("waiting 5s.\r\n");
+					vTaskDelay(5000);
+					// now break back into main loop to reattempt connection
+					break;
 
 				}
 

@@ -223,21 +223,22 @@ static void comm_handler_task(void *pvParameters)
 				// copy received data to socket(n) buffer
 				_socket->bytes_received = modem_copy_buffer(_socket->rx_buffer);
 
-
-//				handle_modem_events();
-
 				// todo: new modem event handler code
 				// check for modem state changes like:
 				// "NO CARRIER"
 				// "ERROR"
-//				sys_result result = handle_modem_events2(_socket);
 				sys_result result = handle_modem_events(_socket->rx_buffer, _socket->bytes_received);
 
 				if(result == SYS_ERR_AT_NOCARRIER) {
 					_socket->event_handler->on_disconnect();
 					_socket->socket_status = SCK_CLOSED;
+					// make sure to give the semaphore back
+					if(comm_state == COMM_RECEIVE) {
+						xSemaphoreGive(tcp_receive_signal);
+					}
 					comm_enterstate(_socket, COMM_IDLE);
 					socket_exitstate(_socket);
+					continue;
 				}
 				// todo: end new modem event handler code
 

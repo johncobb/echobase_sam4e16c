@@ -24,7 +24,7 @@ uint16_t cph_tcp_bufferindex = 0;
 uint16_t cph_tcp_bufferlen = 0;
 uint8_t cph_tcp_buffer[DEFAULT_TCP_BUFFERSIZE] = {0};
 
-bool tcp_isconnected = false;
+volatile bool tcp_isconnected = false;
 
 void cph_tcp_newrequest(socket_connection_t *cnx, comm_request_t *request);
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis);

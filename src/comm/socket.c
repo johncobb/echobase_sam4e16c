@@ -112,5 +112,6 @@ void socket_exitstate(modem_socket_t * socket)
 	socket->state_handle.state = 0;
 	socket->state_handle.substate = 0;
 	socket->bytes_received = 0;
+	socket->socket_error = 0;
 	memset(socket->rx_buffer, '\0', sizeof(socket->rx_buffer));
 }

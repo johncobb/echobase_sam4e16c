@@ -306,10 +306,12 @@ sys_result handle_modem_events(uint8_t *data, int len)
 			uint8_t tmp_buffer[TEMP_BUFFER_LEN] = {0};
 			memset(tmp_buffer, 0, sizeof(tmp_buffer));
 
-			// __________
-			// \nno carri
-			// nno carrie
-			// no carrier
+			// example:
+			// 			__________
+			// bytes: 	0123456789
+			// no:		\nno carri
+			// no:		nno carrie
+			// yes:		no carrier
 
 			// copy bytes 1 thru 9 into our tmp_buffer
 			// we don't care about byte 0 because its about
@@ -334,7 +336,8 @@ sys_result handle_modem_events(uint8_t *data, int len)
 				break;
 			}
 		}
-		// move index to next slot
+		// move index to next slot as long as we are less than max
+		// number of bytes for the window
 		if(nocarrier_window_index < NOCARRIER_WINDOW_MAX)
 			nocarrier_window_index++;
 	}

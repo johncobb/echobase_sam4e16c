@@ -159,8 +159,6 @@ static void configure_console(void) {
 int main(void) {
 
 
-
-
 	cph_clock_init();
 	board_init();
 
