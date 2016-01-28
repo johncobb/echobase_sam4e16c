@@ -58,6 +58,11 @@ void cph_tcp_init(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout)
 	socket_newconnection(cnx, endpoint, timeout, &tcp_socketevent_handler);
 }
 
+void cph_tcp_init2(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout, socket_event_handler_t *handler)
+{
+	socket_newconnection(cnx, endpoint, timeout, handler);
+}
+
 void connection_settimeout(socket_connection_t * cnx, uint32_t millis)
 {
 	cnx->max_wait_millis = millis / portTICK_RATE_MS;

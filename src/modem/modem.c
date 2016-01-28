@@ -281,6 +281,7 @@ uint32_t modem_handler_async(uint32_t millis)
 #define TEMP_BUFFER_LEN			9
 #define NOCARRIER_WINDOW_MAX	(MODEM_NOCARRIER_BUFFER_LEN-1) // once less than the total buffer
 
+
 sys_result handle_modem_events(uint8_t *data, int len)
 {
 	sys_result result = SYS_OK;
@@ -340,6 +341,87 @@ sys_result handle_modem_events(uint8_t *data, int len)
 		// number of bytes for the window
 		if(nocarrier_window_index < NOCARRIER_WINDOW_MAX)
 			nocarrier_window_index++;
+	}
+
+	return result;
+}
+
+//typedef struct
+//{
+//	uint8_t index;
+//	uint8_t maxlen;
+//	uint8_t tmp_buffer;
+//	uint8_t *buffer;
+//}window_buffer_t;
+
+uint8_t buff_nocarrier[MODEM_NOCARRIER_BUFFER_LEN] = {0};
+uint8_t buff_nocarrier_tmp[NOCARRIER_WINDOW_MAX] = {0};
+window_buffer_t wb_nocarrier = {0, NOCARRIER_WINDOW_MAX, buff_nocarrier_tmp, buff_nocarrier};
+
+void example_window_buffer(void)
+{
+	sys_result result = handle_modem_events2(&wb_nocarrier, "NO CARRIER", 10, MODEM_TOKEN_NOCARRIER);
+}
+
+sys_result handle_modem_events2(window_buffer_t *wb, uint8_t *data, int len, uint8_t *token)
+{
+	sys_result result = SYS_OK;
+
+	for (int i=0; i<len; i++) {
+
+		// get a reference to the current byte
+		uint8_t c = data[i];
+
+		// guard against overwriting the last byte in our buffer once
+		// we've hit the NOCARRIER_WINDOW_MAX since we want to copy
+		// the last 9 bytes received into slots 0 thru 8 after which
+		// we will copy the current byte received into the last slot 9
+
+		if(wb->index < wb->maxlen)
+			wb->buffer[wb->index] = c;
+
+		// if we reached the end check to see
+		// if we have the token we're looking for
+		// either way reset the index for the next round of bytes
+		if(wb->index == wb->maxlen) {
+
+			// prep the tmp_buffer
+			memset(wb->temp, 0, sizeof(wb->temp));
+
+			// example:
+			// 			__________
+			// bytes: 	0123456789
+			// no:		\nno carri
+			// no:		nno carrie
+			// yes:		no carrier
+
+			// copy bytes 1 thru 9 into our tmp_buffer
+			// we don't care about byte 0 because its about
+			// to be bumped out of the window we care about
+			memcpy(wb->temp, &wb->buffer[1], sizeof(wb->temp));
+
+			// reset our primary buffer
+			memset(wb->buffer, 0, sizeof(wb->buffer));
+
+			// copy the 9 bytes from tmp_buffer into slots 0 thru 8
+			memcpy(wb->buffer, wb->temp, sizeof(wb->temp));
+
+			// copy the last byte received into the last byte of the buffer
+			wb->buffer[wb->index] = c;
+
+			char * ptr = NULL;
+
+			if((ptr = strstr(wb->buffer, token))) {
+				printf("holy shit it worked\r\n");
+				memset(wb->buffer, 0, sizeof(wb->buffer));
+				result = SYS_ERR_AT_NOCARRIER;
+				break;
+			}
+		}
+		// move index to next slot as long as we are less than max
+		// number of bytes for the window
+		if(wb->index < wb->maxlen)
+			wb->index++;
 	}
 
 	return result;

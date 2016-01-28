@@ -14,6 +14,9 @@
 #include "comm.h"
 #include "sysclk.h"
 #include "app_task.h"
+#include "print_task.h"
+#include "http_task.h"
+
 
 
 
@@ -61,6 +64,7 @@ delete-task:
 #define mainWANPROC_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainAPPTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainPRINTTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainHTTPTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* The stack sizes allocated to the various tasks. */
 #define mainUART_CLI_TASK_STACK_SIZE    		(1024)
@@ -70,6 +74,7 @@ delete-task:
 #define mainCOMM_TASK_STACK_SIZE				(2048)
 #define mainAPPTASK_TASK_STACK_SIZE				(2048)
 #define mainPRINTTASK_TASK_STACK_SIZE			(2048)
+#define mainHTTPTASK_TASK_STACK_SIZE			(2048)
 
 
 // TODO: REVIEW STACK SIZE ALLOCATION
@@ -159,6 +164,7 @@ static void configure_console(void) {
 int main(void) {
 
 
+
 	cph_clock_init();
 	board_init();
 
@@ -184,8 +190,11 @@ int main(void) {
 //	printf("create_apptask_task\r\n");
 //	create_app_task(mainAPPTASK_TASK_STACK_SIZE, mainAPPTASK_TASK_PRIORITY);
 
-	printf("create_printtask_task\r\n");
-	create_printer_task(mainPRINTTASK_TASK_STACK_SIZE, mainPRINTTASK_TASK_PRIORITY);
+//	printf("create_printtask_task\r\n");
+//	create_printer_task(mainPRINTTASK_TASK_STACK_SIZE, mainPRINTTASK_TASK_PRIORITY);
+
+	printf("create_httptask_task\r\n");
+	create_http_task(mainHTTPTASK_TASK_STACK_SIZE, mainHTTPTASK_TASK_PRIORITY);
 
 	printf("create_led_task\r\n");
 	create_led_task();

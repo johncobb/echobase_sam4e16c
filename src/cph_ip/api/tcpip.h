@@ -46,6 +46,7 @@ typedef struct
 }tcp_event_handler_t;
 
 tcp_event_handler_t tcp_event_handler;
+tcp_event_handler_t tcp_event_handler2;
 
 
 
@@ -55,6 +56,7 @@ sys_result cph_tcp_receivecb(uint8_t *data, uint32_t len);
 tcp_result tcp_init(tcp_func_t handle_data);
 
 void cph_tcp_init(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout);
+void cph_tcp_init2(socket_connection_t *cnx, uint8_t *endpoint, uint32_t timeout, socket_event_handler_t *handler);
 
 tcp_result tcp_input(void);
 tcp_result tcp_output(void);

@@ -62,6 +62,16 @@ typedef struct {
 
 } dialer_cmd_t;
 
+// buffer for maintaining
+// last ten bytes received
+typedef struct
+{
+	uint8_t index;
+	uint8_t maxlen;
+	uint8_t *temp;
+	uint8_t *buffer;
+} window_buffer_t;
+
 
 extern uint32_t bytes_received;
 xSemaphoreHandle config_signal;
@@ -71,6 +81,7 @@ sys_result modem_config_handler(void);
 uint32_t modem_handler_async(uint32_t millis);
 //sys_result handle_modem_events(modem_socket_t * socket);
 sys_result handle_modem_events(uint8_t *data, int len);
+sys_result handle_modem_events2(window_buffer_t *wb, uint8_t *data, int len, uint8_t *token);
 
 void reset_rx_buffer(void);
 
