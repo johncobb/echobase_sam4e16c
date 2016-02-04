@@ -6,7 +6,7 @@
  */
 
 
-#include <cph_clock.h>
+#include "cph_clock.h"
 
 volatile uint32_t g_cph_millis = 0;
 volatile uint32_t g_cph_timeout = 0;

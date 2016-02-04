@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
-
+#include "cph.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
 #include "semphr.h"
 #include "timers.h"
-#include <cph.h>
+
 
 #include "cli_tasks.h"
 #include "comm.h"
@@ -65,6 +65,7 @@ delete-task:
 #define mainAPPTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainPRINTTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 #define mainHTTPTASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
+#define mainDECATASK_TASK_PRIORITY				(tskIDLE_PRIORITY + 1)
 
 /* The stack sizes allocated to the various tasks. */
 #define mainUART_CLI_TASK_STACK_SIZE    		(1024)
@@ -75,6 +76,7 @@ delete-task:
 #define mainAPPTASK_TASK_STACK_SIZE				(2048)
 #define mainPRINTTASK_TASK_STACK_SIZE			(2048)
 #define mainHTTPTASK_TASK_STACK_SIZE			(2048)
+#define mainDECATASK_TASK_STACK_SIZE			(1024)
 
 
 // TODO: REVIEW STACK SIZE ALLOCATION
@@ -128,7 +130,7 @@ static void task_led(void *pvParameters) {
 //		pio_toggle_pin(MDM_ENABLE_IDX);
 //		pio_toggle_pin(MDM_RESET_IDX);
 
-		pio_toggle_pin(MCU_LED1);
+//		pio_toggle_pin(MCU_LED1);
 		pio_toggle_pin(MCU_LED2);
 		vTaskDelay(500);
 	}
@@ -178,8 +180,8 @@ int main(void) {
 //	modem_sockets[0].socket_conf.port = 1665;
 	modem_sockets[0].socket_conf.port = 80;
 
-	printf("create_comm_task\r\n");
-	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
+//	printf("create_comm_task\r\n");
+//	create_comm_task(mainCOMM_TASK_STACK_SIZE, mainCOMM_TASK_PRIORITY);
 
 //	printf("create_wan_task\r\n");
 //	create_wan_task(mainWAN_TASK_STACK_SIZE, mainWAN_TASK_PRIORITY);
@@ -193,8 +195,11 @@ int main(void) {
 //	printf("create_printtask_task\r\n");
 //	create_printer_task(mainPRINTTASK_TASK_STACK_SIZE, mainPRINTTASK_TASK_PRIORITY);
 
-	printf("create_httptask_task\r\n");
-	create_http_task(mainHTTPTASK_TASK_STACK_SIZE, mainHTTPTASK_TASK_PRIORITY);
+//	printf("create_httptask_task\r\n");
+//	create_http_task(mainHTTPTASK_TASK_STACK_SIZE, mainHTTPTASK_TASK_PRIORITY);
+
+	printf("create_deca_task\r\n");
+	create_deca_task(mainDECATASK_TASK_STACK_SIZE, mainDECATASK_TASK_PRIORITY);
 
 	printf("create_led_task\r\n");
 	create_led_task();

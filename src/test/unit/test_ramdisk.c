@@ -6,8 +6,7 @@
  */
 
 #include <stdbool.h>
-#include <cph.h>
-#include "cph_board.h"
+#include "board.h"
 #include "ramdisk.h"
 
 

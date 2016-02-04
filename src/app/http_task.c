@@ -17,7 +17,7 @@
 #include "comm.h"
 #include "tcpip.h"
 #include "http_task.h"
-#include <cph.h>
+#include "cph.h"
 
 
 
@@ -38,7 +38,7 @@ static uint16_t connection_retries = 0;
 void create_http_task(uint16_t stack_depth_words, unsigned portBASE_TYPE task_priority)
 {
 	// queue for handling http messages
-//	xPrintQueue = xHttpQueue(1, HTTP_MSG_SIZE);
+//	xHttpQueue = xQueueCreate(1, HTTP_MSG_SIZE);
 
 	xTaskCreate(	http_handler_task,			/* The task that implements the command console. */
 					(const int8_t *const) "HTTP",	/* Text name assigned to the task.  This is just to assist debugging.  The kernel does not use this name itself. */

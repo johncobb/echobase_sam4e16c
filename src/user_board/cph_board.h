@@ -6,14 +6,28 @@
 #include "system_sam4e.h"
 #include "exceptions.h"
 #include "pio.h"
-#include "pmc.h"
+//#include "pmc.h"
 
 #warning "check ECHOBASE_REV before testing"
 
 //#define		ECHOBASE_REV_A01		1
 #define		ECHOBASE_REV_A02		1
-extern uint32_t clock_millis;
 
+// decawave defines
+//#define REV_A_02
+#define REV_A_03
+
+#ifdef REV_A_02
+#define BOARD_REV_MAJOR		0x0A
+#define BOARD_REV_MINOR		0x02
+#endif
+#ifdef REV_A_03
+#define BOARD_REV_MAJOR		0x0A
+#define BOARD_REV_MINOR		0x03
+#endif
+
+
+extern uint32_t clock_millis;
 uint32_t clock_time(void);
 
 #define UNIT_TEST_YIELD		vTaskDelay(10); continue;
@@ -208,5 +222,86 @@ void board_init_printf_uart(void);
 //#define MDM_POWMON_ATTR			PIO_PULLUP
 #define MDM_POWMON_ATTR			PIO_DEFAULT
 
+/*----------------------------------------------------------------------------*/
+/*	DECAWAVE																  */
+/*----------------------------------------------------------------------------*/
+
+
+// Decawave SPI
+#define DW_SPI_BAUD_FAST			5000000UL
+#define DW_SPI_BAUD_SLOW			1000000UL
+#define DW_SPI						SPI
+#define DW_SPI_MAX_BLOCK_TIME 		(50 / portTICK_RATE_MS)
+
+#if defined(REV_A_02)
+#define DW_CSn_PIO_IDX				PIO_PC4_IDX
+#define DW_CSn_PIO_PERIPH			PIO_PERIPH_B
+#define DW_CHIP_SELECT				1
+#define DW_CHIP_SELECT_VALUE		0x0001
+#define DW_NONE_CHIP_SELECT_VALUE   0x0f
+#elif defined(REV_A_03)
+#define DW_CSn_PIO_IDX				PIO_PA11_IDX
+#define DW_MISO_PIO_IDX				PIO_PA12_IDX
+#define DW_MOSI_PIO_IDX				PIO_PA13_IDX
+#define DW_SPCK_PIO_IDX				PIO_PA14_IDX
+#define DW_CSn_PIO_PERIPH			PIO_PERIPH_A
+#define DW_MISO_PERIPH				PIO_PERIPH_A
+#define DW_MOSI_PERIPH				PIO_PERIPH_A
+#define DW_SPCK_PERIPH				PIO_PERIPH_A
+#define DW_CHIP_SELECT				2
+#define DW_CHIP_SELECT_VALUE		0x03
+#define DW_NONE_CHIP_SELECT_VALUE   0x0f
+#else
+error Undefined refision.
+#endif
+
+
+
+#define DW_DELAY_BEFORE				0x05
+#define DW_DELAY_BETWEEN			0x05
+#define DW_DELAY_BETWEEN_CS			0x05
+#define DW_CLOCK_POLARITY			1
+#define DW_CLOCK_PHASE				1
+
+// check
+// Decawave WAKEUP
+#define DW_WAKEUP_PIO				PIOD
+#define DW_WAKEUP_PIO_IDX			PIO_PD20_IDX
+#define DW_WAKEUP_MASK				PIO_PD20
+#define DW_WAKEUP_TYPE				PIO_OUTPUT_0
+#define DW_WAKEUP_ATTR				(PIO_DEFAULT)
+
+// check
+// Decawave RSTn - input, no pull up/down
+#define DW_RSTn_PIO					PIOD
+#define DW_RSTn_PIO_ID				ID_PIOD
+#define DW_RSTn_PIO_IDX				PIO_PD21_IDX
+#define DW_RSTn_MASK				PIO_PD21
+#define DW_RSTn_TYPE				PIO_INPUT
+#define DW_RSTn_ATTR				(PIO_IT_RISE_EDGE | PIO_DEFAULT)
+#define DW_RSTn_FLAGS				(DW_RSTn_TYPE | DW_RSTn_ATTR)
+
+
+// Decawave IRQ
+#if defined(REV_A_02)
+#define DW_IRQ_PIO					PIOC
+#define DW_IRQ_PIO_ID				ID_PIOC
+#define DW_IRQ_IDX					PIO_PC0_IDX
+#define DW_IRQ_MASK					PIO_PC0
+#define DW_IRQ_IRQ					PIOC_IRQn
+#elif defined(REV_A_03)
+#define DW_IRQ_PIO					PIOD
+#define DW_IRQ_PIO_ID				ID_PIOD
+#define DW_IRQ_IDX					PIO_PD18_IDX
+#define DW_IRQ_MASK					PIO_PD18
+#define DW_IRQ_IRQ					PIOA_IRQn
+#else
+#error Unknown revision.
+#endif
+
+#define DW_IRQ_TYPE					PIO_INPUT
+#define DW_IRQ_ATTR					(PIO_IT_RISE_EDGE | PIO_DEFAULT)
+//#define DW_IRQ_ATTR					(PIO_IT_HIGH_LEVEL | PIO_DEFAULT)
+#define DW_IRQ_FLAGS				(DW_IRQ_TYPE | DW_IRQ_ATTR)
 
 #endif  // _CPH_BOARD_H

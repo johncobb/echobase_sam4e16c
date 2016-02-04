@@ -52,7 +52,9 @@
  * running the ASF driver selector tool. Any changes will be discarded.
  */
 
-
+// From module: Common SAM compiler driver
+#include <compiler.h>
+#include <status_codes.h>
 
 // From module: Part identification macros
 #include <parts.h>
@@ -70,13 +72,9 @@
 #include <task.h>
 #include <timers.h>
 
-
-// From module: Common SAM compiler driver
-#include <compiler.h>
-#include <status_codes.h>
-
 // From module: Generic board support
 #include <board.h>
+#include <conf_board.h>
 
 // From module: Interrupt management - SAM implementation
 #include <interrupt.h>
@@ -89,10 +87,13 @@
 #include <pmc.h>
 #include <sleep.h>
 
-// From module: SAM3X startup code
+// From module: SAM4E startup code
 #include <exceptions.h>
 
-// From module: System Clock Control - SAM3X/A implementation
+// From module: SPI - Serial Peripheral Interface
+#include <spi.h>
+
+// From module: System Clock Control - SAM4E implementation
 #include <sysclk.h>
 
 // From module: UART - Univ. Async Rec/Trans
@@ -106,5 +107,10 @@
 
 // From module: Standard serial I/O (stdio) - SAM implementation
 #include <stdio_serial.h>
+
+#include <freertos_spi_master.h>
+#include <spi.h>
+
+#include <flash_efc.h>
 
 #endif // ASF_H

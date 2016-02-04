@@ -8,13 +8,19 @@
 #ifndef SRC_CPH_CPH_H_
 #define SRC_CPH_CPH_H_
 
-#include <asf.h>
+#include "asf.h"
 
 //#define MAIN_TEST
 
-#include <conf_board.h>
-#include <cph_clock.h>
-#include <unit_test.h>
+#include "conf_board.h"
+#include "cph_clock.h"
+#include "unit_test.h"
+
+// decawave includes
+#include "cph_config.h"
+#include <cph_deca.h>
+#include <globals.h>
+#include <configure.h>
 
 #define BASESTATION_ID			"20000000"
 #define SOFTWARE_VER_STRING  	"Version 2.01    "
@@ -33,4 +39,39 @@
 #define IP_ENDPIONT_PRINTTASK		"google.com"
 
 
-#endif /* SRC_CPH_CPH_H_ */
+// decawave defines
+#define FW_MAJOR				0x01
+#define FW_MINOR				0x01
+
+//#define ANCHOR
+//#define TAG
+//#define SENDER
+#define LISTENER
+
+#define TRACE(...)				printf(__VA_ARGS__)
+
+
+typedef struct PACKED {
+	uint8_t magic[4];
+	uint8_t hw_major;
+	uint8_t hw_minor;
+	uint8_t fw_major;
+	uint8_t fw_minor;
+	uint16_t panid;
+	uint16_t shortid;
+	dwt_config_t dwt_config;
+	uint8_t mode;
+	uint32_t sender_period;
+} cph_config_t;
+
+extern cph_config_t * cph_config;
+
+extern int cph_mode;
+
+extern uint16_t cph_coordid;
+
+
+
+
+
+#endif

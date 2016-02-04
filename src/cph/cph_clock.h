@@ -9,7 +9,6 @@
 #define SRC_CPH_CPH_CLOCK_H_
 
 #include <stdint.h>
-#include <cph.h>
 
 extern volatile uint32_t g_cph_millis;
 extern volatile uint32_t g_cph_timeout;

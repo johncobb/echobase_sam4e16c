@@ -81,6 +81,10 @@ void board_init(void)
 	pio_configure(MCU_LED2_PIO, MCU_LED2_TYPE, MCU_LED2_MASK, MCU_LED2_ATTR);
 #endif
 
+	pio_configure(DW_WAKEUP_PIO, DW_WAKEUP_TYPE, DW_WAKEUP_MASK, DW_WAKEUP_ATTR);
+	pio_configure(DW_RSTn_PIO, DW_RSTn_TYPE, DW_RSTn_MASK, DW_RSTn_ATTR);
+
+
 //#ifdef CONF_BOARD_UART_CONSOLE
 //	pio_configure(PINS_UART1_PIO, PINS_UART1_TYPE, PINS_UART1_MASK, PINS_UART1_ATTR);
 //#endif

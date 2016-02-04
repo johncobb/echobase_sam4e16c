@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <cph.h>
+#include "board.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "modem.h"
@@ -350,7 +350,7 @@ sys_result handle_modem_events(uint8_t *data, int len)
 //{
 //	uint8_t index;
 //	uint8_t maxlen;
-//	uint8_t tmp_buffer;
+//	uint8_t *tmp_buffer;
 //	uint8_t *buffer;
 //}window_buffer_t;
 

@@ -1,7 +1,9 @@
 /**
  * \file
  *
- * \brief SRAM Linker script for SAM.
+ * \brief Flash Linker script for SAM.
+ *
+ * Copyright (c) 2012-2013 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -46,28 +48,24 @@ SEARCH_DIR(.)
 /* Memory Spaces Definitions */
 MEMORY
 {
-	rom (rx)    : ORIGIN = 0x00080000, LENGTH = 0x00080000 /* Flash, 512K */
-	sram0 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00010000 /* sram0, 64K */
-	sram1 (rwx) : ORIGIN = 0x20080000, LENGTH = 0x00008000 /* sram1, 32K */
-	ram (rwx)   : ORIGIN = 0x20070000, LENGTH = 0x00018000 /* sram, 96K */
-/*	ram (rwx)   : ORIGIN = ORIGIN( sram1 )-LENGTH( sram0 ), LENGTH = LENGTH( sram0 )+LENGTH( sram1 ) */ /* sram, 96K */
+  rom (rx)  : ORIGIN = 0x00400000, LENGTH = 0x00100000
+  ram (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00020000
 }
 
-/* The stack size used by the application. NOTE: you need to adjust  */
-__stack_size__ = DEFINED(__stack_size__) ? __stack_size__ : 0x2000;
+/* The stack size used by the application. NOTE: you need to adjust according to your application. */
+__stack_size__ = DEFINED(__stack_size__) ? __stack_size__ : 0x3000;
 __ram_end__ = ORIGIN(ram) + LENGTH(ram) - 4;
 
-/* Section Definitions */ 
-SECTIONS 
-{ 
-    .text : 
-    { 
+SECTIONS
+{
+    .text :
+    {
         . = ALIGN(4);
         _sfixed = .;
         KEEP(*(.vectors .vectors.*))
-        *(.text .text.* .gnu.linkonce.t.*) 	      
-        *(.glue_7t) *(.glue_7)		                
-        *(.rodata .rodata* .gnu.linkonce.r.*)		    	                  
+        *(.text .text.* .gnu.linkonce.t.*)
+        *(.glue_7t) *(.glue_7)
+        *(.rodata .rodata* .gnu.linkonce.r.*)
         *(.ARM.extab* .gnu.linkonce.armextab.*)
 
         /* Support C constructors, and C destructors in both user code
@@ -107,9 +105,17 @@ SECTIONS
 
         . = ALIGN(4);
         _efixed = .;            /* End of text section */
-    } > ram
+    } > rom
 
-    . = ALIGN(4); 
+    /* .ARM.exidx is sorted, so has to go in its own output section.  */
+    PROVIDE_HIDDEN (__exidx_start = .);
+    .ARM.exidx :
+    {
+      *(.ARM.exidx* .gnu.linkonce.armexidx.*)
+    } > rom
+    PROVIDE_HIDDEN (__exidx_end = .);
+
+    . = ALIGN(4);
     _etext = .;
 
     .relocate : AT (_etext)
@@ -122,9 +128,9 @@ SECTIONS
         _erelocate = .;
     } > ram
 
-    /* .bss section which is used for uninitialized data */ 
+    /* .bss section which is used for uninitialized data */
     .bss (NOLOAD) :
-    { 
+    {
         . = ALIGN(4);
         _sbss = . ;
         _szero = .;
@@ -138,20 +144,13 @@ SECTIONS
     /* stack section */
     .stack (NOLOAD):
     {
-         _sstack = .;
+        . = ALIGN(8);
+        _sstack = .;
         . = . + __stack_size__;
         . = ALIGN(8);
         _estack = .;
     } > ram
 
-    /* .ARM.exidx is sorted, so has to go in its own output section.  */
-    PROVIDE_HIDDEN (__exidx_start = .);
-    .ARM.exidx :
-    {
-      *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-    } > ram
-    PROVIDE_HIDDEN (__exidx_end = .);
-
-    . = ALIGN(4); 
-    _end = . ; 
+    . = ALIGN(4);
+    _end = . ;
 }

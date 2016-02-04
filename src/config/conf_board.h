@@ -53,16 +53,16 @@
 #define CONF_BOARD_WAN_CONTROL
 
 /** Enable Com Port. */
-#define CONF_BOARD_UART_CONSOLE
+//#define CONF_BOARD_UART_CONSOLE
 
 /** Pins description corresponding to Rxd,Txd, (UART pins) */
-#define CONSOLE_PINS        {PINS_UART}
+//#define CONSOLE_PINS        {PINS_UART}
 
 /* Usart Hw ID used by the console (UART0) */
-#define CONSOLE_UART_ID          ID_UART
+//#define CONSOLE_UART_ID          ID_UART
 
 /* Configure UART pins */
-#define CONF_BOARD_UART_CONSOLE
+//#define CONF_BOARD_UART_CONSOLE
 
 /* Configure ADC example pins */
 //#define CONF_BOARD_ADC

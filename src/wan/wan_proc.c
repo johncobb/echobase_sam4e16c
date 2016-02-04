@@ -25,7 +25,6 @@
 #include "cobs.h"
 #include "ramdisk.h"
 #include "wan_proc.h"
-#include <cph.h>
 
 static uint8_t encoded_buffer[COBS_MSG_LEN] = {0};
 static uint8_t decoded_buffer[COBS_BUFFER_LEN] = {0};

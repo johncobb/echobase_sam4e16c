@@ -3,7 +3,7 @@
  *
  * \brief FreeRTOS Peripheral Control API Functions
  *
- * Copyright (c) 2012-2014 Atmel Corporation. All rights reserved.
+ * Copyright (c) 2012-2015 Atmel Corporation. All rights reserved.
  *
  * \asf_license_start
  *
@@ -40,7 +40,7 @@
  * \asf_license_stop
  *
  */
- /**
+/*
  * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
  */
 
@@ -270,7 +270,7 @@ typedef struct freertos_peripheral_options {
 	
 	/**
 	 * Individual bits in the options_flags value configure an aspect of the 
-	 * driver抯 behavior, where valid bits (which are documented as part of the
+	 * driver's behavior, where valid bits (which are documented as part of the
 	 * \ref freertos_service_group documentation) are USE_TX_ACCESS_MUTEX, 
 	 * USE_RX_ACCESS_MUTEX, WAIT_TX_COMPLETE, WAIT_RX_COMPLETE.
 	 */
