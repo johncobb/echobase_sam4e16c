@@ -1,6 +1,7 @@
 ### Cellular basestation using FreeRTOS
 #### chip: echobase_sam4e16c
 
+Research project to determine feasibility and accuracy of battery powered ultrawideband based asset tag. Proof of concept delivered approximately 20cm accuracy in an indoor environment. Approximately 25-30 cm accuracy outdoors depending on anchor denisty and obstacles.
 
 ```console
 #JLink commands
